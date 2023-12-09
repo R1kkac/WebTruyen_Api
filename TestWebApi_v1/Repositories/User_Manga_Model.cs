@@ -41,8 +41,9 @@ namespace TestWebApi_v1.Repositories
         //    }
         //    return new List<Bookmark> { };
         //}
-        public async Task<List<MangaFollowing>> DanhSachTheoDoi(string idUser, string requestUrl, string routeController)
+        public async Task<List<MangaFollowing>> DanhSachTheoDoi(string idUser, string requestUrl)
         {
+            string routeController= "Truyen-tranh";
             var dsTruyen = await (from Bookmark in _db.bookmark
                            join BoTruyen in _db.BoTruyens on Bookmark.IdBotruyen equals BoTruyen.MangaId
                            where Bookmark.IdUser == idUser

@@ -10,7 +10,7 @@ namespace TestWebApi_v1.Repositories
         //Theo doi
         Task<ResultService> TheoDoiTruyen(string IdUser, string IdManga);
         ResultService HuyTheoDoi(string IdUser, string IdManga);
-        Task<List<MangaFollowing>> DanhSachTheoDoi(string idUser, string requestUrl, string routeController);
+        Task<List<MangaFollowing>> DanhSachTheoDoi(string idUser, string requestUrl);
 
         //Thong bao
         Task<IEnumerable<ThongbaoUser>> LayToanBoThongBao(string idUser);
