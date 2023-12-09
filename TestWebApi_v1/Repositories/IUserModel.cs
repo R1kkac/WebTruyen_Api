@@ -11,7 +11,7 @@ namespace TestWebApi_v1.Repositories
 {
     public interface IUserModel
     {
-        Task<UserViewModel?> layThongTinNguoiDung(string idUser);
+        Task<UserInfo?> layThongTinNguoiDung(string idUser);
         Task<ResponeRegister> DangKytaiKhoan(string User);
         Task<ResultService> SuaThongTinTaiKhoan(string User, IFormFile? Avatar);
         Task<ResultService> XoataiKhoan(string email);

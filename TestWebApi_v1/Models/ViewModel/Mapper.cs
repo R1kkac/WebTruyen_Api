@@ -14,6 +14,7 @@ namespace TestWebApi_v1.Models.ViewModel
         {
             _Service = services;
             CreateMap<User, UserViewModel>();
+            CreateMap<User, UserInfo>();
             CreateMap<Role, RoleViewModel>();
             CreateMap<BoTruyen, EditManga>();
             CreateMap<Bookmark, BookmarkView>();
@@ -23,6 +24,8 @@ namespace TestWebApi_v1.Models.ViewModel
             CreateMap<BotruyenProfile, botruyenViewforTopmanga>().ForMember(dest => dest.MangaImage, opt => opt.MapFrom(src =>
                 src.MangaImage != null ? _Service.getImageManga(src.requesturl ?? "", src.routecontroller ?? "", src.MangaId, src.MangaImage) : null));
             CreateMap<BoTruyenTopView, TopManga>().ForMember(dest => dest.MangaImage, opt => opt.MapFrom(src =>
+                src.MangaImage != null ? _Service.getImageManga(src.requesturl ?? "", src.routecontroller ?? "", src.MangaId, src.MangaImage) : null)); ;
+            CreateMap<BotruyenProfile, MangaFollowing>().ForMember(dest => dest.MangaImage, opt => opt.MapFrom(src =>
                 src.MangaImage != null ? _Service.getImageManga(src.requesturl ?? "", src.routecontroller ?? "", src.MangaId, src.MangaImage) : null)); ;
             CreateMap<BoTruyen, Searchmanga>();
             CreateMap<KenhChatUser, KenhChatUser2>();
