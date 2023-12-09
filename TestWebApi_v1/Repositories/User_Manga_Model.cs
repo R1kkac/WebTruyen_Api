@@ -41,23 +41,20 @@ namespace TestWebApi_v1.Repositories
         //    }
         //    return new List<Bookmark> { };
         //}
-        public async Task<List<BoTruyen>> DanhSachTheoDoi(string idUser, string requestUrl)
+        public async Task<List<MangaFollowing>> DanhSachTheoDoi(string idUser, string requestUrl, string routeController)
         {
-            var path = "Truyen-tranh";
-            var listManga = from Bookmark in _db.bookmark
+            var dsTruyen = await (from Bookmark in _db.bookmark
                            join BoTruyen in _db.BoTruyens on Bookmark.IdBotruyen equals BoTruyen.MangaId
                            where Bookmark.IdUser == idUser
-                           select BoTruyen;
-            var dsTruyen = await listManga.ToListAsync();
-            foreach (var a in dsTruyen)
+                           select BoTruyen).ToListAsync();
+            var map= _mapper.Map<List<BotruyenProfile>>(dsTruyen);
+            map.ForEach(x =>
             {
-                a.MangaImage = (a.MangaImage != null) ? _sv.getImageManga(requestUrl, path, a.MangaId, a.MangaImage) : null;
-            }
-            if (dsTruyen != null)
-            {
-                return dsTruyen;
-            }
-            return new List<BoTruyen> { };
+                x.requesturl = requestUrl;
+                x.routecontroller = routeController;
+            });
+            var map2 = _mapper.Map<List<MangaFollowing>>(map);
+            return map2;
         }
         public async Task<ResultService> TheoDoiTruyen(string IdUser, string IdManga)
         {

@@ -65,6 +65,7 @@ namespace TestWebApi_v1.Repositories
                 Email = register.Email,
                 SecurityStamp = Guid.NewGuid().ToString(),
                 UserName = register.UserName,
+                JoinDate = DateTime.UtcNow,
                 //TwoFactorEnabled = true,
                 //PhoneNumber = register.PhoneNumber,
                 //Avatar=(Avatar!=null) ?Avatar.FileName:null
@@ -123,10 +124,13 @@ namespace TestWebApi_v1.Repositories
             return new ResultService { Value=false, Message="Đã xảy ra lỗi" };
         }
 
-        public async Task<UserViewModel?> layThongTinNguoiDung(string idUser)
+        public async Task<UserInfo?> layThongTinNguoiDung(string idUser)
         {
             var result = await _userManager.FindByIdAsync(idUser);
-            var user = _mapper.Map<UserViewModel>(result);
+            var Roles = await _userManager.GetRolesAsync(result);
+            var user = _mapper.Map<UserInfo>(result);
+            user.Role = new List<string>(Roles);
+            //user.Role = Roles;
             if (user != null)
             {
                 return user;

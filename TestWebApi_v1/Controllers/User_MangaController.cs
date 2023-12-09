@@ -48,10 +48,12 @@ namespace TestWebApi_v1.Controllers
         }
         [HttpGet]
         [Route("DanhsachTheoDoi/{idUser}")]
-        public async Task<List<BoTruyen>> ListFollowing(string idUser)
+        public async Task<List<MangaFollowing>> ListFollowing(string idUser)
         {
+            var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
+            string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
             string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
-            var result = await _userMangaModel.DanhSachTheoDoi(idUser, requestUrl);
+            var result = await _userMangaModel.DanhSachTheoDoi(idUser, requestUrl, routeController);
             //var data = _mapper.Map<List<BookmarkView>>(result);
             return result;
         }

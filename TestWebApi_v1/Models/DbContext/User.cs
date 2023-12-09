@@ -21,6 +21,8 @@ namespace TestWebApi_v1.Models.DbContext
 
         public string? Avatar { get; set; }
         public string? Name { get; set; }
+        public DateTimeOffset? JoinDate { get; set; }
+
 
         public virtual ICollection<BoTruyen> BoTruyens { get; set; }
 

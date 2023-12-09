@@ -51,7 +51,7 @@ namespace TestWebApi_v1.Controllers
         }
         //Lấy thông tin người dùng
         [HttpGet("Infouser/{idUser}")]
-        public async Task<UserViewModel?> getInfoUser(string idUser)
+        public async Task<UserInfo?> getInfoUser(string idUser)
         {
             var result = await _userModel.layThongTinNguoiDung(idUser);
             if (result!= null)

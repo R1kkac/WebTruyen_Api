@@ -45,7 +45,13 @@ namespace TestWebApi_v1.Models.TruyenTranh.MangaView
         public string? MangaImage { get; set; }
         public int? View { get; set; }
         public string? Typetop { get; set; } //=1 top ngày, =2 top tháng, =3 top năm
-
-
+    }
+    public class MangaFollowing
+    {
+        public string MangaId { get; set; } = null!;
+        public string? MangaName { get; set; }
+        public string? MangaImage { get; set; }
+        public string? MangaDetails { get; set; }
+        public string? Dateupdate { get; set; }
     }
 }
