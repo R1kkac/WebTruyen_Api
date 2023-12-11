@@ -10,7 +10,7 @@ namespace TestWebApi_v1.Models.TruyenTranh.MangaView
         public List<string>? Imagechapter { get; set; } = null!;
         public string Chapter_Date { get; set; } = null!;
         public string? Manga_Id { get; set; } = null!;
-        public string? ChapterIndex { get; set; }
+        public int? ChapterIndex { get; set; }
     }
     public class chapterView2
     {
@@ -18,7 +18,7 @@ namespace TestWebApi_v1.Models.TruyenTranh.MangaView
         public string? ChapterName { get; set; } = null!;
         public string? ChapterTitle { get; set; }
         public string? ChapterDate { get; set; }
-        public string? ChapterIndex { get; set; }
+        public int? ChapterIndex { get; set; }
 
     }
 }

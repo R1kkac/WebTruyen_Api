@@ -14,20 +14,24 @@ namespace TestWebApi_v1.Repositories
 
         //Thong bao
         Task<IEnumerable<ThongbaoUser>> LayToanBoThongBao(string idUser);
-        Task<IEnumerable<ThongbaoUser>> LayThongBaoChuaDoc(string idUser);
+        Task<IEnumerable<NotificationView>> LayThongBaoChuaDoc(string idUser, string requestUrl);
         Task<ResultService> TaoThongBao(string idUser, string mesage);
         Task<ResultService> DaXemThongBao(string idThongbao);
 
         //Truyen tranh
         Task<IEnumerable<botruyenView>> DanhSachTruyenUserTao(string idUser);
         Task<IEnumerable<User>> DanhSachUserTheoRole(string idRole);
-        Task<ResultService> DemViewBoTruyen(string idBotruyen, string View);
+        Task DemViewBoTruyen(string idBotruyen);
 
         //Binh Luan
         Task<bool> BinhLuanChuongTruyen(string IdUser, string IdChapter, string CommentData);
         Task<bool> ReplyBinhLuanChuong(string IdComment, string IdUser, string Replydata);
         Task<List<danhSachBinhLuan>> danhSachBinhLuanTheoChuuong(string idChuong);
         Task<List<danhSachReplyBinhLuan>> layDanhSachPhanHoi(string idComment);
+
+        //Danh gia
+        Task<bool> DanhgiaTruyen(string MangaId, string star);
+
 
 
     }

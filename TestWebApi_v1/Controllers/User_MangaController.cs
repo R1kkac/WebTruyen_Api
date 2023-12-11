@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using TestWebApi_v1.Models.DbContext;
 using TestWebApi_v1.Models.TruyenTranh.MangaView;
 using TestWebApi_v1.Models.ViewModel.MangaView;
@@ -64,9 +65,10 @@ namespace TestWebApi_v1.Controllers
         }
         [HttpGet]
         [Route("DanhSachThongBaoChuaXem/{idUser}")]
-        public async Task<IEnumerable<ThongbaoUser>> ListNotificationUnSeen(string idUser)
+        public async Task<IEnumerable<NotificationView>> ListNotificationUnSeen(string idUser)
         {
-            var result = await _userMangaModel.LayThongBaoChuaDoc(idUser);
+            string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+            var result = await _userMangaModel.LayThongBaoChuaDoc(idUser, requestUrl);
             return result;
         }
         [HttpPost]
@@ -109,17 +111,11 @@ namespace TestWebApi_v1.Controllers
             return result;
         }
         [HttpPost]
-        [Route("CapNhatView")]
-        public async Task<IActionResult> UpdateViewManga(string idBotruyen, string ViewCount)
+        [Route("CapNhatView/{MangaId}")]
+        public async Task<IActionResult> UpdateViewManga([FromForm] string MangaId)
         {
-            var result = await _userMangaModel.DemViewBoTruyen(idBotruyen, ViewCount);
-            if (result.Value == true)
-            {
-                return StatusCode(StatusCodes.Status200OK,
-                    new Respone { Status = "Success", Message = result.Message });
-            }
-            return StatusCode(StatusCodes.Status403Forbidden,
-                new Respone { Status = "Failed", Message = result.Message });
+            await _userMangaModel.DemViewBoTruyen(MangaId);
+            return Ok();
         }
 
         //Danh sách bình luận theo chương
@@ -160,6 +156,14 @@ namespace TestWebApi_v1.Controllers
         public async Task<bool> ReplyCommentChapter([FromForm] string IdComment, [FromForm] string IdUserReply, [FromForm] string ReplyData)
         {
             var result = await _userMangaModel.ReplyBinhLuanChuong(IdComment, IdUserReply, ReplyData);
+            return result;
+        }
+        //Đánh giá truyện
+        [HttpPost]
+        [Route("rating")]
+        public async Task<bool> RatingManga([FromForm] string MangaId, [FromForm] string star)
+        {
+            var result=await _userMangaModel.DanhgiaTruyen(MangaId, star);
             return result;
         }
     }

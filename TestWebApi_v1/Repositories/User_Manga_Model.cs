@@ -105,14 +105,23 @@ namespace TestWebApi_v1.Repositories
             }
             return new List<ThongbaoUser>() { };
         }
-        public async Task<IEnumerable<ThongbaoUser>> LayThongBaoChuaDoc(string idUser)
+        public async Task<IEnumerable<NotificationView>> LayThongBaoChuaDoc(string idUser, string requestUrl)
         {
             var result =await _db.Notification.Where(x => x.IdUser.Equals(idUser) && x.seen == false).ToListAsync();
-            if(result != null)
-            {
-                return result;
+            var data = _mapper.Map<List<NotificationView>>(result);
+            foreach (var item in data) {
+                var manga =await _db.BoTruyens.FindAsync(item.target);
+                if(manga != null)
+                {
+                    item.nametarget = manga.MangaName;
+                    item.imagerarget = $"{requestUrl}Truyen-tranh/{manga.Id}/{manga.MangaImage}";
+                }
             }
-            return new List<ThongbaoUser>() { };
+            if(data != null)
+            {
+                return data;
+            }
+            return new List<NotificationView>() { };
         }
         //Tạo thông báo {admin=> user, user=> user (tag chat), phần thông báo chương mới truyện theo dõi sẽ được làm bằng trigger}
         public async Task<ResultService> TaoThongBao(string idUser, string mesage)
@@ -189,16 +198,13 @@ namespace TestWebApi_v1.Repositories
         }
 
 
-        public async Task<ResultService> DemViewBoTruyen(string idBotruyen, string View)
+        public async Task DemViewBoTruyen(string idBotruyen)
         {
-            var viewCount =await _db.ViewCounts.FirstOrDefaultAsync(x => x.Id.Equals(idBotruyen));
-            if (viewCount != null)
+            await Task.Run(() =>
             {
-                viewCount.Viewbydate += int.Parse(View);
-                await _db.SaveChangesAsync();
-                return new ResultService { Value = true, Message = "Successfully!" };
-            }
-            return new ResultService { Value = false, Message = "Failed!" };
+                MangaviewCount.taoIndexView(idBotruyen);
+                MangaviewCount.themViewBotruyen(idBotruyen);
+            });
         }
         //Danh sách bình luận theo chương truyện
         public async Task<List<danhSachBinhLuan>> danhSachBinhLuanTheoChuuong(string idChuong)
@@ -321,12 +327,121 @@ namespace TestWebApi_v1.Repositories
             }
             return false;
         }
+        public async Task<bool> DanhgiaTruyen(string MangaId, string star)
+        {
+            try {
+                var MangaRating = await _db.RatingMangas.Where(x => x.Mangaid == MangaId).FirstOrDefaultAsync();
+                if (MangaRating != null)
+                {
+                    double rating = MangaRating.Rating;
+                    int NumberUserRating = MangaRating.NumberRating;
+                    double curRating = double.Parse(star);
+                    double newRating = ((curRating) + (rating * NumberUserRating)) / (NumberUserRating + 1);
+                    MangaRating.Rating = Math.Round(newRating, 2);
+                    MangaRating.NumberRating += 1;
+                    await _db.SaveChangesAsync();
+                    return true;
+                }
+                else
+                {
+                    double curRating = double.Parse(star);
+                    RatingManga rate = new RatingManga
+                    {
+                        Mangaid = MangaId,
+                        Rating = Math.Round(curRating, 2),
+                        NumberRating = 1
+                    };
+                    await _db.RatingMangas.AddAsync(rate);
+                    await _db.SaveChangesAsync();
+                    return true;
+                }
+            }catch(Exception)
+            {
+                return false;
+            }
+        }
         private string RandomNumber()
         {
             Guid data = Guid.NewGuid();
             return data.ToString();
         }
+    }
+    public class MangaviewCount
+    {
+        public static Dictionary<string, int> ViewBotruyen = new Dictionary<string, int>();
+        private static readonly object lockObject = new object();
+        private static readonly WebTruyenTranh_v2Context _db = new WebTruyenTranh_v2Context();
+        public static bool taoIndexView(string mangaid)
+        {
+            lock (lockObject)
+            {
+                if (string.IsNullOrEmpty(mangaid))
+                {
+                    // Đảm bảo mangaid không rỗng hoặc null
+                    return false;
+                }
+                if (ViewBotruyen.ContainsKey(mangaid))
+                {
+                    return true;
+                }
+                else
+                {
+                    ViewBotruyen.Add(mangaid, 0);
+                    return true;
+                }
+            }
+        }
+        public static bool themViewBotruyen(string mangaid)
+        {
+            lock (lockObject)
+            {
+                if (string.IsNullOrEmpty(mangaid))
+                {
+                    // Đảm bảo mangaid không rỗng hoặc null
+                    return false;
+                }
+                if (ViewBotruyen.ContainsKey(mangaid))
+                {
+                    ViewBotruyen[mangaid] = ViewBotruyen[mangaid] + 1;
+                    return true;
+                }
+                return false;
+            }
+        }
+        public static async Task PushViewToDatabase()
+        {
+            if (ViewBotruyen.Count == 0)
+            {
+                return;
+            }
 
-       
+            for (int i = 0; i < ViewBotruyen.Count; i++)
+            {
+                var mangaId = ViewBotruyen.Keys.ElementAt(i);
+                var viewCount = ViewBotruyen[mangaId];
+
+                var view = await _db.ViewCounts.FirstOrDefaultAsync(x => x.Id == mangaId);
+
+                if (view != null)
+                {
+                    view.Viewbydate += viewCount;
+                    view.Viewbymonth += view.Viewbydate;
+                    view.Viewbyyear += view.Viewbymonth;
+                }
+            }
+
+            await _db.SaveChangesAsync();
+            ViewBotruyen.Clear();
+        }
+        public static void reMoveAllViewCount()
+        {
+            lock (lockObject)
+            {
+                if (ViewBotruyen.Count > 0)
+                {
+                    ViewBotruyen.Clear();
+                }
+            }    
+        }
     }
 }
