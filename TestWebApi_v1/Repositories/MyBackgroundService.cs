@@ -55,10 +55,12 @@ namespace TestWebApi_v1.Repositories
                 //_memoryCache.Set("ListManga", result);
                 //bộ nhớ phân táng
                 //_cache.SetString("ListManga", result.ToString());
+                
+                await MangaviewCount.PushViewToDatabase();
 
 
                 // Đợi một khoản thời gian trước khi lặp lại
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken); // 10 giây
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); // 10 giây
             }
         }
     }
