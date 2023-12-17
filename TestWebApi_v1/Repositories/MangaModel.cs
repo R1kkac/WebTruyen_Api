@@ -130,6 +130,9 @@ namespace TestWebApi_v1.Repositories
                 var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
                 var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbyyear).FirstOrDefaultAsync();
                 var mapchapter = _mapper.Map<List<chapterView2>>(listChapter);
+                int sum = 0;
+                sum += await _db.BinhLuans.Where(y => y.MangaId.Equals(mapmanga.MangaId)).CountAsync();
+                mapmanga.Comment = sum;
                 mapmanga.ListChaper = mapchapter;
                 mapmanga.Listcategory = listCategory;
                 mapmanga.View = mangaview.ToString();

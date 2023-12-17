@@ -9,6 +9,7 @@ using TestWebApi_v1.Models;
 using TestWebApi_v1.Models.DbContext;
 using TestWebApi_v1.Models.TruyenTranh.MangaView;
 using TestWebApi_v1.Models.ViewModel.MangaView;
+using TestWebApi_v1.Models.ViewModel.UserView;
 using TestWebApi_v1.Service;
 using X.PagedList;
 
@@ -223,7 +224,8 @@ namespace TestWebApi_v1.Repositories
                     danhSachBinhLuan a = new danhSachBinhLuan
                     {
                         UserName= user.Name!,
-                        chapterId = item.ChapterId,
+                        ChapterId = item.ChapterId ?? null,
+                        MangaId= item.MangaId,
                         commentData = item.CommentData,
                         date = (DateTimeOffset)item.DateComment!,
                         IdComment = item.IdComment,
@@ -277,15 +279,53 @@ namespace TestWebApi_v1.Repositories
             //    ).ToListAsync();
             //return result;
         }
-        //bình luận
-        public async Task<bool> BinhLuanChuongTruyen(string IdUser, string IdChapter, string CommentData)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Idchapter">id chương</param>
+        /// <param name="page">kích thước trang</param>
+        /// <param name="number">trang cần trỏ</param>
+        /// <param name="requesturl">url của api</param>
+        /// <returns>mapper của bình luận CommentViewModel</returns>
+        public async Task<List<CommentViewModel>> danhSachBinhluanCuaBoTruyen(string IdManga, int? page, int? number, string requesturl)
         {
-            if (await _userManager.FindByIdAsync(IdUser) == null || await _db.ChuongTruyens.FindAsync(IdChapter) == null) return false;
+            int pagesize = (page ?? 10);
+            int pagenumber = (number ?? 1);
+            try
+            {
+                var result = await _db.BinhLuans.Where(x=> x.MangaId.Equals(IdManga))
+                    .OrderByDescending(x => x.DateComment)
+                    .AsNoTracking()
+                    .ToPagedListAsync(pagenumber, pagesize);
+                List<CommentViewModel> data = _mapper.Map<List<CommentViewModel>>(result);
+
+                foreach (var item in data)
+                {
+                    var user = await _db.Users.Where(y => y.Id.Equals(item.IdUser)).SingleOrDefaultAsync();
+                    item.Avatar = $"{requesturl}Authentication/Avatar/{user!.Avatar}";
+                    item.Name = user.Name;
+                    item.CurChapter = await _db.ChuongTruyens
+                    .Where(y => y.ChapterId.Equals(item.ChapterId))
+                    .Select(z => z.ChapterName)
+                    .SingleOrDefaultAsync();
+                }
+                return data;
+            }
+            catch (Exception)
+            {
+                return new List<CommentViewModel>() { };
+            }
+        }
+        //bình luận
+        public async Task<bool> BinhLuanChuongTruyen(string IdUser,string IdManga, string? IdChapter, string CommentData)
+        {
+            if (await _userManager.FindByIdAsync(IdUser) == null || await _db.BoTruyens.FindAsync(IdManga) == null) return false;
             BinhLuan comment = new BinhLuan
             {
                 IdComment = Guid.NewGuid().ToString().Substring(0, 10),
                 IdUser = IdUser,
-                ChapterId = IdChapter,
+                MangaId= IdManga,
+                ChapterId = (IdChapter == "isnull")? null : IdChapter,
                 CommentData = CommentData,
                 DateComment = DateTime.UtcNow
             };

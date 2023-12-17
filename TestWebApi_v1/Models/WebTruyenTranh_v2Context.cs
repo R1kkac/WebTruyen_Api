@@ -298,6 +298,10 @@ namespace TestWebApi_v1.Models
                     .HasMaxLength(10)
                     .IsUnicode(false);
 
+                entity.Property(e => e.MangaId)
+                 .HasMaxLength(10)
+                 .IsUnicode(false);
+
                 entity.Property(e => e.IdUser).HasMaxLength(450);
 
                 entity.HasOne(d => d.Chapter)
@@ -305,6 +309,12 @@ namespace TestWebApi_v1.Models
                     .HasForeignKey(d => d.ChapterId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Commentn_Chapter");
+
+                entity.HasOne(d => d.Manga)
+                    .WithMany(p => p.BinhLuans)
+                    .HasForeignKey(d => d.MangaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Commentn_Manga");
 
                 entity.HasOne(d => d.IdUserNavigation)
                     .WithMany(p => p.BinhLuans)

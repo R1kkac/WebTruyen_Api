@@ -18,6 +18,8 @@ namespace TestWebApi_v1.Models.TruyenTranh.MangaView
         public bool? Status { get; set; }
         public List<chapterView2>? ListChaper { get; set; }
         public List<TheLoai>? Listcategory { get; set; }
+        public int? Comment { get; set; }
+
     }
     public class botruyenViewforTopmanga
     {
