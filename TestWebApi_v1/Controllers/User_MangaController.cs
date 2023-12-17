@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using TestWebApi_v1.Models.DbContext;
 using TestWebApi_v1.Models.TruyenTranh.MangaView;
 using TestWebApi_v1.Models.ViewModel.MangaView;
+using TestWebApi_v1.Models.ViewModel.UserView;
 using TestWebApi_v1.Repositories;
 using TestWebApi_v1.Service;
 
@@ -117,11 +118,10 @@ namespace TestWebApi_v1.Controllers
             await _userMangaModel.DemViewBoTruyen(MangaId);
             return Ok();
         }
-
         //Danh sách bình luận theo chương
         [HttpGet]
         [Route("GetListComment/{ChapterId}")]
-        public async Task<List<danhSachBinhLuan>> GetListComment(string ChapterId)
+        public async Task<List<danhSachBinhLuan>> GetListCommentByChapter(string ChapterId)
         {
             var result =await _userMangaModel.danhSachBinhLuanTheoChuuong(ChapterId);
             if (result != null)
@@ -129,6 +129,17 @@ namespace TestWebApi_v1.Controllers
                 return result;
             }
             return new List<danhSachBinhLuan>() { };
+        }
+        //Danh sách bình luận theo bộ truyện
+        [HttpGet]
+        [Route("manga_comment_manga/{MangaId}/{PageSize}/{PageNumber}")]
+        public async Task<List<CommentViewModel>> GetCommentForManga(string MangaId, string PageSize, string PageNumber)
+        {
+            int size = int.Parse(PageSize);
+            int number = int.Parse(PageNumber);
+            string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+            var result = await _userMangaModel.danhSachBinhluanCuaBoTruyen(MangaId, size, number, requestUrl);
+            return result;
         }
         //Danh sách phản hồi bình luận
         [HttpGet]
@@ -145,9 +156,9 @@ namespace TestWebApi_v1.Controllers
         //Bình luận
         [HttpPost]
         [Route("Comment")]
-        public async Task<bool> CommentChapter([FromForm] string IdUser, [FromForm] string IdChapter, [FromForm] string CommentData)
+        public async Task<bool> Comment([FromForm] string IdUser, [FromForm] string IdManga, [FromForm] string? IdChapter, [FromForm] string CommentData)
         {
-            var result = await _userMangaModel.BinhLuanChuongTruyen(IdUser, IdChapter, CommentData);
+            var result = await _userMangaModel.BinhLuanChuongTruyen(IdUser, IdManga, IdChapter, CommentData);
             return result;
         }
         // Phản hồi bình luận

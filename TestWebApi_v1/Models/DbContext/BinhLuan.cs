@@ -12,11 +12,13 @@ namespace TestWebApi_v1.Models.DbContext
 
         public string IdComment { get; set; } = null!;
         public string IdUser { get; set; } = null!;
-        public string ChapterId { get; set; } = null!;
+        public string MangaId { get; set; } = null!;
+        public string? ChapterId { get; set; }
         public string? CommentData { get; set; }
         public DateTimeOffset? DateComment { get; set; }
 
-        public virtual ChuongTruyen Chapter { get; set; } = null!;
+        public virtual ChuongTruyen? Chapter { get; set; }
+        public virtual BoTruyen Manga { get; set; } = null!;
         public virtual User IdUserNavigation { get; set; } = null!;
         public virtual ICollection<ReplyComment> ReplyComments { get; set; }
     }
@@ -26,7 +28,8 @@ namespace TestWebApi_v1.Models.DbContext
         public string UserName { get; set; } = null!;
         public string UserAvatar { get; set; } = null!;
         public string IdComment { get; set; } = null!;
-        public string chapterId { get; set; } = null!;
+        public string MangaId { get; set; } = null!;
+        public string? ChapterId { get; set; }
         public string? commentData { get; set; }
         public DateTimeOffset? date { get; set; }
     }

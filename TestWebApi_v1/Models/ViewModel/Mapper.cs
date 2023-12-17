@@ -32,6 +32,8 @@ namespace TestWebApi_v1.Models.ViewModel
             CreateMap<TheLoai, CategoryView>();
             CreateMap<ChuongTruyen, chapterView2>();
             CreateMap<ThongbaoUser, NotificationView>();
+            CreateMap<BinhLuan, CommentViewModel>();
+
         }
     }
 }
