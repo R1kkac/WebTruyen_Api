@@ -65,13 +65,14 @@ namespace TestWebApi_v1.Controllers
             var url = getCurrenthttpContext();
             return await _mangaModel.responeSearch(value, url);
         }
-        [HttpGet("Gettopmanga/{type}")]
-        public async Task<List<botruyenViewforTopmanga>> getTOpManga(string type)
+        [HttpGet("topmanga_by_type/{type}/{page}/{size}")]
+        public async Task<List<botruyenViewforTopmanga>> getTOpManga(string type, string page, string size)
         {
-            var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
-            string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
+            int typemanga = int.Parse(type);
+            int pagenumber = int.Parse(page);
+            int pagesize = int.Parse(size); ;
             string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
-            var result =await _mangaModel.getTopmanga(type, requestUrl, routeController);
+            var result =await _mangaModel.getTopmanga(pagenumber, pagesize, typemanga, requestUrl);
             return result;
         }
         [HttpGet("GetAllManga/{page}")]
@@ -404,6 +405,23 @@ namespace TestWebApi_v1.Controllers
             string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
             var result= $"{requestUrl}{routeController}";
             return result;
+        }
+        [HttpGet]
+        [Route("all_manga_by_type/{type}/{pagenumber}/{pagesize}")]
+        public async Task<List<botruyenViewforTopmanga>> mangaByType(string type, string pagenumber, string pagesize)
+        {
+            int curtype = int.Parse(type);
+            int curpagesize = int.Parse(pagesize);
+            int curpagenumber = int.Parse(pagenumber);
+            string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+            var result =await _mangaModel.danhSahcBotruyen(curtype, curpagesize, curpagenumber, requestUrl);
+            return result;
+        }
+        [HttpGet]
+        [Route("number_all_manga")]
+        public async Task<int> getNumberAllManga()
+        {
+            return await _mangaModel.numbermanga();
         }
         [HttpGet("LayThuCache")]
         public async Task<IEnumerable<botruyenView>> getdata( )

@@ -11,18 +11,21 @@ namespace TestWebApi_v1.Repositories
         Task<IEnumerable<Searchmanga>> search();
         Task<IEnumerable<botruyenView>> LayDanhSachTruyenTheoPage(int? page, string requestUrl, string routeController);
         Task<botruyenView?> LayThongTinTruyen(string MangaId, string requestUrl, string routeController);
+        Task<List<botruyenViewforTopmanga>> danhSahcBotruyen(int type, int pagenumber, int pagesize, string requesurl);
         string? LayAnhTruyen(string imageManga);
         Task<bool> TaoTruyen(string idUser, string Manga, IFormFile? MangaImage);
         Task<bool> SuaTruyen(string Id, string Manga, IFormFile? MangaImage);
         Task<bool> XoaTruyen(string iduUser, string MangaId);
         Task<List<botruyenView>> getMangaNewUpdate(string requestUrl, string routeController);
         Task<int> getPageNumber();
-        Task<List<botruyenViewforTopmanga>> getTopmanga(string toptype, string requestUrl, string routeController);
+        Task<List<botruyenViewforTopmanga>> getTopmanga(int page, int number, int type, string requestUrl);
         Task<List<botruyenView>> getMangaByCategories(List<string> listCategories, string requestUrl, string routeController);
         Task<List<TopManga>> Topmangabydate(int? page, string requestUrl, string routeController);
         Task<List<TopManga>> Topmangabymonth(int? page, string requestUrl, string routeController);
         Task<List<TopManga>> TopmangabyYear(int? page, string requestUrl, string routeController);
         Task<List<TopManga>> getTopMangaDefault(string requestUrl, string routeController);
+        Task<int> numbermanga();
+
 
 
 

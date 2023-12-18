@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -299,21 +300,20 @@ namespace TestWebApi_v1.Repositories
             }
         }
         //lấy top manga
-        public async Task<List<botruyenViewforTopmanga>> getTopmanga(string toptype, string requestUrl, string routeController)
+        public async Task<List<botruyenViewforTopmanga>> getTopmanga(int page, int number, int type, string requestUrl)
         {
-            int type = int.Parse(toptype);
             List<botruyenViewforTopmanga> data = new List<botruyenViewforTopmanga>();
             if(type == 0)
             {
                 var result = await _db.BoTruyens
                     .OrderByDescending(x => x.BotruyenViewCounts.Sum(y => y.Viewbyyear))
-                    .ToPagedListAsync(1,10); 
+                    .ToPagedListAsync(page, number); 
                 foreach (var a  in result)
                 {
                     RatingManga? rating = await _db.RatingMangas.FromSqlRaw("select * from RatingManga where Mangaid = @p0", a.MangaId).FirstOrDefaultAsync();
                     var map1 = _mapper.Map<BotruyenProfile>(a);
                     map1.requesturl = requestUrl;
-                    map1.routecontroller = routeController;
+                    map1.routecontroller = "Truyen-tranh";
                     var mapmanga = _mapper.Map<botruyenViewforTopmanga>(map1);
                     mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
                     var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbyyear).FirstOrDefaultAsync();
@@ -333,13 +333,13 @@ namespace TestWebApi_v1.Repositories
                     .Where(x => x.Id == type)
                     .SelectMany(y => y.Mangas)
                     .OrderByDescending(z => z.BotruyenViewCounts.Sum(d => d.Viewbyyear))
-                    .ToPagedListAsync(1,10);
+                    .ToPagedListAsync(page, number);
                 foreach (var a in result)
                 {
                     RatingManga? rating = await _db.RatingMangas.FromSqlRaw("select * from RatingManga where Mangaid = @p0", a.MangaId).FirstOrDefaultAsync();
                     var map1 = _mapper.Map<BotruyenProfile>(a);
                     map1.requesturl = requestUrl;
-                    map1.routecontroller = routeController;
+                    map1.routecontroller = "Truyen-tranh";
                     var mapmanga = _mapper.Map<botruyenViewforTopmanga>(map1);
                     mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
                     var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbyyear).FirstOrDefaultAsync();
@@ -354,7 +354,110 @@ namespace TestWebApi_v1.Repositories
 
         }
 
-        //------------------------------------------------End-Manga----------------------------------------------------//
+        public async Task<List<botruyenViewforTopmanga>> danhSahcBotruyen(int type, int pagesize, int pagenumber, string requesurl)
+        {
+            List<botruyenViewforTopmanga> data = new List<botruyenViewforTopmanga>();
+            IEnumerable<BoTruyen> botruyen = new List<BoTruyen>();
+            switch (type)
+            {
+                case 0:
+                    botruyen = await MangaByName(pagesize, pagenumber);
+                    data = await mapMangaToMangaView(botruyen, requesurl);
+                    break;
+                case 1:
+                    botruyen = await MangaByNameDes(pagesize, pagenumber);
+                    data = await mapMangaToMangaView(botruyen, requesurl);
+                    break;
+                case 2:
+                    botruyen = await MangaByStatus(pagesize, pagenumber);
+                    data = await mapMangaToMangaView(botruyen, requesurl);
+                    break;
+                case 3:
+                    botruyen = await MangaByDateUpdate(pagesize, pagenumber);
+                    data = await mapMangaToMangaView(botruyen, requesurl);
+                    break;
+                case 4:
+                    botruyen = await MangaByNumberOfChapter(pagesize, pagenumber);
+                    data = await mapMangaToMangaView(botruyen, requesurl);
+                    break;
+                case 5:
+                    botruyen = await MangaByView(pagesize, pagenumber);
+                    data = await mapMangaToMangaView(botruyen, requesurl);
+                    break;
+                case 6:
+                    botruyen = await MangaByRating(pagesize, pagenumber);
+                    data = await mapMangaToMangaView(botruyen, requesurl);
+                    break;
+                default:
+                    botruyen = await MangaByName(pagesize, pagenumber);
+                    data = await mapMangaToMangaView(botruyen, requesurl);
+                    break;
+            }
+            return data;
+        }
+        public async Task<IEnumerable<BoTruyen>> MangaByName(int pagesize, int pagenumber)
+        {
+            var result = await _db.BoTruyens.OrderBy(x => x.MangaName).ToPagedListAsync(pagenumber, pagesize);
+            return result;
+        }
+        public async Task<IEnumerable<BoTruyen>> MangaByNameDes(int pagesize, int pagenumber)
+        {
+            var result = await _db.BoTruyens.OrderByDescending(x => x.MangaName).ToPagedListAsync(pagenumber, pagesize);
+            return result;
+        }
+        public async Task<IEnumerable<BoTruyen>> MangaByStatus(int pagesize, int pagenumber)
+        {
+            var result = await _db.BoTruyens.OrderByDescending(x => x.Status).ToPagedListAsync(pagenumber, pagesize);
+            return result;
+        }
+        public async Task<IEnumerable<BoTruyen>> MangaByDateUpdate(int pagesize, int pagenumber)
+        {
+            var result = await _db.BoTruyens.OrderByDescending(x => x.ChuongTruyens.Max(x=> x.ChapterDate)).ToPagedListAsync(pagenumber, pagesize);
+            return result;
+        }
+        public async Task<IEnumerable<BoTruyen>> MangaByNumberOfChapter(int pagesize, int pagenumber)
+        {
+            var result = await _db.BoTruyens.OrderByDescending(x => x.ChuongTruyens.Count).ToPagedListAsync(pagenumber, pagesize);
+            return result;
+        }
+        public async Task<IEnumerable<BoTruyen>> MangaByView(int pagesize, int pagenumber)
+        {
+            var result = await _db.BoTruyens.OrderByDescending(x => x.BotruyenViewCounts.Max(x=> x.Viewbyyear)).ToPagedListAsync(pagenumber, pagesize);
+            return result;
+        }
+        public async Task<IEnumerable<BoTruyen>> MangaByRating(int pagesize, int pagenumber)
+        {
+            var result = await _db.BoTruyens.OrderByDescending(x => x.RatingMangas.Max(y=> y.Rating)).ToPagedListAsync(pagenumber, pagesize);
+            return result;
+        }
+        public async Task<List<botruyenViewforTopmanga>> mapMangaToMangaView(IEnumerable<BoTruyen> listdata, string requesturl)
+        {
+            List<botruyenViewforTopmanga> data = new List<botruyenViewforTopmanga>();
+            foreach (var a in listdata)
+            {
+                RatingManga? rating = await _db.RatingMangas.FromSqlRaw("select * from RatingManga where Mangaid = @p0", a.MangaId).FirstOrDefaultAsync();
+                var map1 = _mapper.Map<BotruyenProfile>(a);
+                map1.requesturl = requesturl;
+                map1.routecontroller = "Truyen-tranh";
+                var mapmanga = _mapper.Map<botruyenViewforTopmanga>(map1);
+                mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
+                var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbyyear).FirstOrDefaultAsync();
+                var chaptercount = await _db.ChuongTruyens.Where(x => x.MangaId == a.MangaId).CountAsync();
+                var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
+                mapmanga.Listcategory= listCategory;
+                mapmanga.View = mangaview.ToString();
+                mapmanga.chaptercount = chaptercount.ToString();
+                mapmanga.mangaCount = listdata.Count().ToString();
+                data.Add(mapmanga);
+            }
+            return data;
+        }
+        public async Task<int> numbermanga()
+        {
+            return await _db.BoTruyens.CountAsync();
+        }
+
+        //-----------------------------------------------End-Manga----------------------------------------------------//
         //-------------------------------------------------Chapter-----------------------------------------------------//
 
         //Lấy danh sách tất cả chương truyện
