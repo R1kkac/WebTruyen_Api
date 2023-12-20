@@ -8,6 +8,9 @@ using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using System.Data;
 using System.Diagnostics;
+using System.Linq;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 using TestWebApi_v1.Models;
 using TestWebApi_v1.Models.DbContext;
 using TestWebApi_v1.Models.TruyenTranh.MangaView;
@@ -92,7 +95,7 @@ namespace TestWebApi_v1.Repositories
                 mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
                 List<ChuongTruyen> listChapter= await _db.ChuongTruyens.Where(x=> x.MangaId == a.MangaId).OrderByDescending(y=>y.ChapterDate)
                     .Take(3).ToListAsync();
-                var listCategory =await _db.BoTruyens.Where(x=>x.MangaId == a.MangaId).SelectMany(y=> y.Genres).ToListAsync();
+                var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
                 var mangaview= await _db.ViewCounts.Where(x=> x.Id == a.MangaId).Select(y=> y.Viewbyyear).FirstOrDefaultAsync();
                 var mapchapter= _mapper.Map<List<chapterView2>>(listChapter);
                 mapmanga.ListChaper = mapchapter;
@@ -749,21 +752,12 @@ namespace TestWebApi_v1.Repositories
 
         }
         //Tìm kiếm truyện nâng cao theo tất cả thể loại
-        public async Task<List<botruyenView>> getMangaByCategoriesAll(List<string> listCategories, string requestUrl)
+        public async Task<string> getMangaByCategoriesAll(List<string> listCategories, string requestUrl)
         {
-            //var result = await _db.BoTruyens
-            //    .Include(boTruyen => boTruyen.Genres)
-            //    .ToListAsync();
-
-            //result = result
-            //    .Where(boTruyen => listCategories.All(categoryId => boTruyen.Genres.Any(type => type.GenreId == int.Parse(categoryId))))
-            //    .ToList();
-
-            List<BoTruyen> listmanga = await _db.BoTruyens.Take(20).ToListAsync();
-            foreach(var item in listmanga)
-            {
-                item.Genres = await _db.BoTruyens.Where(x => x.MangaId == item.MangaId).SelectMany(y => y.Genres).ToListAsync();
-            }
+            List<BoTruyen> listmanga = await _db.BoTruyens
+                .Include(boTruyen => boTruyen.Genres)
+                .Include(chapter => chapter.ChuongTruyens.Take(3))
+                .ToListAsync();
             var result = listmanga.Where(x => listCategories.All(y => x.Genres.Any(z => z.GenreId == int.Parse(y)))).ToList();
             List<botruyenView> a = new List<botruyenView>();
             foreach (var item in result)
@@ -774,15 +768,19 @@ namespace TestWebApi_v1.Repositories
                 map1.routecontroller = "Truyen-tranh";
                 var mapmanga = _mapper.Map<botruyenView>(map1);
                 mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
-                List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == item.MangaId).OrderByDescending(y => y.ChapterDate)
-                    .Take(3).ToListAsync();
-                var listCategory = await _db.BoTruyens.Where(x => x.MangaId == item.MangaId).SelectMany(y => y.Genres).ToListAsync();
-                var mapchapter = _mapper.Map<List<chapterView2>>(listChapter);
+                //List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == item.MangaId).OrderByDescending(y => y.ChapterDate)
+                //    .Take(3).ToListAsync();
+                //var listCategory = await _db.BoTruyens.Where(x => x.MangaId == item.MangaId).SelectMany(y => y.Genres).ToListAsync();
+                var mapchapter = _mapper.Map<List<chapterView2>>(item.ChuongTruyens.ToList());
                 mapmanga.ListChaper = mapchapter;
-                mapmanga.Listcategory = listCategory;
+                mapmanga.Listcategory = item.Genres.ToList();
                 a.Add(mapmanga);
             }
-            return a;
+            var data = System.Text.Json.JsonSerializer.Serialize(a, new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.Preserve
+            });
+            return data;
 
         }
         //Tải danh sách topmanga default

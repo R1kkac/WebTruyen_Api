@@ -130,6 +130,7 @@ namespace TestWebApi_v1.Models
 
                 entity.ToTable("Bookmark");
             });
+
             modelBuilder.Entity<TypeManga>(entity =>
             {
                 entity.ToTable("TypeManga");

@@ -41,8 +41,6 @@ namespace TestWebApi_v1.Models.DbContext
         public virtual ICollection<BinhLuan> BinhLuans { get; set; }
 
 
-
-
     }
     public class BoTruyenTopView
     {
