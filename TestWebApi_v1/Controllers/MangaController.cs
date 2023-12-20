@@ -388,6 +388,14 @@ namespace TestWebApi_v1.Controllers
             var result =await _mangaModel.getMangaByCategories(List, requestUrl, routeController);
             return result; ;
         }
+        //Lấy manga thỏa hết theo danh sách thể loại
+        [HttpGet("get_manga_all_categories")]
+        public async Task<List<botruyenView>> GetMangaByCategoriesALl([FromQuery] List<string> List)
+        {
+            string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+            var result = await _mangaModel.getMangaByCategoriesAll(List, requestUrl);
+            return result; 
+        }
         //Lấy topmanga default
         [HttpGet("Topmanga")]
         public async Task<List<TopManga>> defaultTopManga()
