@@ -66,7 +66,7 @@ namespace TestWebApi_v1.Controllers
             return await _mangaModel.responeSearch(value, url);
         }
         [HttpGet("topmanga_by_type/{type}/{page}/{size}")]
-        public async Task<List<botruyenViewforTopmanga>> getTOpManga(string type, string page, string size)
+        public async Task<ResultForTopView> getTOpManga(string type, string page, string size)
         {
             int typemanga = int.Parse(type);
             int pagenumber = int.Parse(page);
@@ -356,13 +356,11 @@ namespace TestWebApi_v1.Controllers
 
 
         //lấy danh sách manga theo thể loại
-        [HttpGet("GetmangabyCategory/{idCategory}")]
-        public async Task<List<botruyenView>> getMangabyCategry(string idCategory)
+        [HttpGet("GetmangabyCategory/{idCategory}/{pagenumber}/{pagesize}")]
+        public async Task<ResultForMangaView> getMangabyCategry(string idCategory, string pagenumber, string pagesize)
         {
-            var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
-            string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
             string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
-            var result = await _mangaModel.getMangaByCategory(idCategory, requestUrl, routeController);
+            var result = await _mangaModel.getMangaByCategory(idCategory, pagenumber, pagesize, requestUrl);
             return result;
         }
         //lấy danh sách thể loại
@@ -379,7 +377,7 @@ namespace TestWebApi_v1.Controllers
             return await _mangaModel.getPageNumber();
         }
         //Lấy manga theo danh sách thể loại
-        [HttpGet("GetMangaByCategories")]
+        [HttpGet("GetMangaByListCategories")]
         public async Task<List<botruyenView>> GetMangaByCategories([FromQuery] List<string> List)
         {
             var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;

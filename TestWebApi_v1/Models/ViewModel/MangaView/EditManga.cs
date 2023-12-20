@@ -9,6 +9,6 @@ public class EditManga
     public string? MangaAlternateName { get; set; }
     public string? MangaAuthor { get; set; }
     public string? MangaArtist { get; set; }
-    public string? MangaGenre { get; set; }
+    public string? Type { get; set; }
     public string? Id { get; set; }
 }

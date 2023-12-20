@@ -47,7 +47,7 @@ namespace TestWebApi_v1.Repositories
                         MangaAlternateName = a.MangaAlternateName,
                         MangaAuthor = a.MangaAuthor,
                         MangaArtist = a.MangaArtist,
-                        MangaGenre = a.MangaGenre
+                        Type = a.Type
                     };
                     result.Add(b);
                 }

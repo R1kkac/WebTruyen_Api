@@ -5,5 +5,7 @@
         public string MangaId { get; set; } = null!;
         public string MangaName { get; set; } = null!;
         public string? MangaImage { get; set; }
+        public string? MangaDetails { get; set; }
+
     }
 }

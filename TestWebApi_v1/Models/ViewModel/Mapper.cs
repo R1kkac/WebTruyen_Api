@@ -12,7 +12,7 @@ namespace TestWebApi_v1.Models.ViewModel
         private readonly IServices _Service;
         public Mapper(IServices services)
         {
-            _Service = services;
+            _Service = services;           
             CreateMap<User, UserViewModel>();
             CreateMap<User, UserInfo>();
             CreateMap<Role, RoleViewModel>();
@@ -21,7 +21,8 @@ namespace TestWebApi_v1.Models.ViewModel
             CreateMap<BoTruyen, BotruyenProfile>();
             CreateMap<BotruyenProfile, botruyenView>().ForMember(dest => dest.MangaImage, opt => opt.MapFrom(src =>
                 src.MangaImage != null ? _Service.getImageManga(src.requesturl ?? "", src.routecontroller ?? "", src.MangaId, src.MangaImage) : null));
-            CreateMap<BotruyenProfile, botruyenViewforTopmanga>().ForMember(dest => dest.MangaImage, opt => opt.MapFrom(src =>
+            CreateMap<BotruyenProfile, botruyenViewforTopmanga>()
+                .ForMember(dest => dest.MangaImage, opt => opt.MapFrom(src =>
                 src.MangaImage != null ? _Service.getImageManga(src.requesturl ?? "", src.routecontroller ?? "", src.MangaId, src.MangaImage) : null));
             CreateMap<BoTruyenTopView, TopManga>().ForMember(dest => dest.MangaImage, opt => opt.MapFrom(src =>
                 src.MangaImage != null ? _Service.getImageManga(src.requesturl ?? "", src.routecontroller ?? "", src.MangaId, src.MangaImage) : null)); ;
@@ -33,7 +34,6 @@ namespace TestWebApi_v1.Models.ViewModel
             CreateMap<ChuongTruyen, chapterView2>();
             CreateMap<ThongbaoUser, NotificationView>();
             CreateMap<BinhLuan, CommentViewModel>();
-
         }
     }
 }

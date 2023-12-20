@@ -11,7 +11,7 @@ namespace TestWebApi_v1.Models.TruyenTranh.MangaView
         public string? MangaAlternateName { get; set; }
         public string? MangaAuthor { get; set; }
         public string? MangaArtist { get; set; }
-        public string? MangaGenre { get; set; }
+        public int? Type { get; set; }
         public string? Dateupdate { get; set; }
         public string? Rating { get; set; }
         public string? View { get; set; }
@@ -30,15 +30,26 @@ namespace TestWebApi_v1.Models.TruyenTranh.MangaView
         public string? MangaAlternateName { get; set; }
         public string? MangaAuthor { get; set; }
         public string? MangaArtist { get; set; }
-        public string? MangaGenre { get; set; }
+        public string? TypeManga { get; set; }
         public string? Dateupdate { get; set; }
         public string? Rating { get; set; }
         public string? View { get; set; }
+        public int? numberFollow { get; set; }
         public bool? Status { get; set; }
         public List<TheLoai>? Listcategory { get; set; }
 
         public string? chaptercount { get; set; }
         public string? mangaCount { get; set; }
+    }
+    public class ResultForTopView
+    {
+        public int numberManga { get; set; }
+        public List<botruyenViewforTopmanga> listmanga { get; set; } = null!;
+    }
+    public class ResultForMangaView
+    {
+        public int numberManga { get; set; }
+        public List<botruyenView> listmanga { get; set; } = null!;
     }
     public class TopManga
     {

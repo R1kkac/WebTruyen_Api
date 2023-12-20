@@ -74,16 +74,17 @@ namespace TestWebApi_v1.Models
 
                 entity.Property(e => e.MangaAuthor).HasMaxLength(100);
 
-                entity.Property(e => e.MangaGenre)
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
-
                 entity.Property(e => e.MangaName).HasMaxLength(200);
 
                 entity.HasOne(d => d.IdNavigation)
                     .WithMany(p => p.BoTruyens)
                     .HasForeignKey(d => d.Id)
                     .HasConstraintName("FK_Botruyen_UserAccount");
+                entity.HasOne(d => d.TypeNavigation)
+                    .WithMany(p => p.BoTruyens)
+                    .HasForeignKey(d => d.Type)
+                    .HasConstraintName("FK_BoTruyen_TypeManga");
+
                 entity.HasMany(d => d.Genres)
                    .WithMany(p => p.Mangas)
                    .UsingEntity<Dictionary<string, object>>(
@@ -138,23 +139,6 @@ namespace TestWebApi_v1.Models
                 entity.HasIndex(e => e.Id, "IX_TYPEMANGA");
 
                 entity.Property(e => e.Name).HasMaxLength(100);
-
-                entity.HasMany(d => d.Mangas)
-                    .WithMany(p => p.Types)
-                    .UsingEntity<Dictionary<string, object>>(
-                        "TypeMangaManga",
-                        l => l.HasOne<BoTruyen>().WithMany().HasForeignKey("MangaId").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK__TypeManga__Manga__39237A9A"),
-                        r => r.HasOne<TypeManga>().WithMany().HasForeignKey("TypeId").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK__TypeManga__TypeI__382F5661"),
-                        j =>
-                        {
-                            j.HasKey("TypeId", "MangaId").HasName("PK__TypeMang__A8DF43492288EF9D");
-
-                            j.ToTable("TypeManga_Manga");
-
-                            j.HasIndex(new[] { "TypeId", "MangaId" }, "IX_TYPEMANGA_MANGA");
-
-                            j.IndexerProperty<string>("MangaId").HasMaxLength(10).IsUnicode(false);
-                        });
             });
             modelBuilder.Entity<ChapterImage>(entity =>
             {

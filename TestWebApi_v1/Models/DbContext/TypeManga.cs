@@ -7,12 +7,12 @@ namespace TestWebApi_v1.Models.DbContext
     {
         public TypeManga()
         {
-            Mangas = new HashSet<BoTruyen>();
+            BoTruyens = new HashSet<BoTruyen>();
         }
 
         public int Id { get; set; }
         public string? Name { get; set; }
 
-        public virtual ICollection<BoTruyen> Mangas { get; set; }
+        public virtual ICollection<BoTruyen> BoTruyens { get; set; }
     }
 }
