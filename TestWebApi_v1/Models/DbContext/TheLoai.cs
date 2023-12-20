@@ -16,5 +16,6 @@ namespace TestWebApi_v1.Models.DbContext
 
 
         public virtual ICollection<BoTruyen> Mangas { get; set; }
+
     }
 }

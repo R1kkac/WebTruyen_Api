@@ -20,7 +20,7 @@ namespace TestWebApi_v1.Repositories
         Task<int> getPageNumber();
         Task<List<botruyenViewforTopmanga>> getTopmanga(int page, int number, int type, string requestUrl);
         Task<List<botruyenView>> getMangaByCategories(List<string> listCategories, string requestUrl, string routeController);
-        Task<List<botruyenView>> getMangaByCategoriesAll(List<string> listCategories, string requestUrl);
+        Task<string> getMangaByCategoriesAll(List<string> listCategories, string requestUrl);
         Task<List<TopManga>> Topmangabydate(int? page, string requestUrl, string routeController);
         Task<List<TopManga>> Topmangabymonth(int? page, string requestUrl, string routeController);
         Task<List<TopManga>> TopmangabyYear(int? page, string requestUrl, string routeController);

@@ -390,7 +390,7 @@ namespace TestWebApi_v1.Controllers
         }
         //Lấy manga thỏa hết theo danh sách thể loại
         [HttpGet("get_manga_all_categories")]
-        public async Task<List<botruyenView>> GetMangaByCategoriesALl([FromQuery] List<string> List)
+        public async Task<string> GetMangaByCategoriesALl([FromQuery] List<string> List)
         {
             string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
             var result = await _mangaModel.getMangaByCategoriesAll(List, requestUrl);
