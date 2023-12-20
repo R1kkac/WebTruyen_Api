@@ -208,7 +208,7 @@ namespace TestWebApi_v1.Repositories
             });
         }
         //Danh sách bình luận theo chương truyện
-        public async Task<List<danhSachBinhLuan>> danhSachBinhLuanTheoChuuong(string idChuong)
+        public async Task<List<danhSachBinhLuan>> danhSachBinhLuanTheoChuuong(string idChuong, string requesturl)
         {
             //var data= (from chuongtruyen in _db.ChuongTruyens 
             //            join binhluan in _db.BinhLuans on chuongtruyen.ChapterId equals binhluan.ChapterId
@@ -227,10 +227,12 @@ namespace TestWebApi_v1.Repositories
                         ChapterId = item.ChapterId ?? null,
                         MangaId= item.MangaId,
                         commentData = item.CommentData,
+                        Likecomment = item.Likecomment,
+                        Dislikecomment = item.Dislikecomment,
                         date = (DateTimeOffset)item.DateComment!,
                         IdComment = item.IdComment,
                         IdUser = user.Id,
-                        UserAvatar = $"https://localhost:7132/Authentication/Avatar/{user.Avatar}"
+                        UserAvatar = $"{requesturl}Authentication/Avatar/{user.Avatar}"
                     };
                     data.Add(a);
                 }
@@ -248,15 +250,17 @@ namespace TestWebApi_v1.Repositories
             // không đồng bộ khi vẫn còn giữ kết nối nhưng dữ liệu database thay đổi
             using (var context= new WebTruyenTranh_v2Context())
             {
+                var rootusercomment =await _db.Users.Where(x => x.BinhLuans.Any(y => y.IdComment.Equals(idComment))).SingleOrDefaultAsync();
                 var result = await (from user in context.Users
                                     join data in context.ReplyComments on user.Id equals data.IdUserReply
                                     where data.IdComment == idComment
                                     select new danhSachReplyBinhLuan
                                     {
                                         IdUser = user.Id!,
-                                        UserName = user.UserName!,
+                                        UserName = user.Name!,
                                         UserAvatar = $"https://localhost:7132/Authentication/Avatar/{user.Avatar}",
                                         IdReply = data.IdReply,
+                                        NameReply= rootusercomment!.Name ?? null,
                                         ReplyData = data.Replydata,
                                         DateReply = data.DateReply
                                     }
@@ -399,6 +403,65 @@ namespace TestWebApi_v1.Repositories
             {
                 return false;
             }
+        }
+        public async Task<bool> likeComment(string Idcomment)
+        {
+            var result =await _db.BinhLuans.Where(x => x.IdComment.Equals(Idcomment)).SingleOrDefaultAsync();
+            if(result != null)
+            {
+                result.Likecomment = result.Likecomment ?? 0;
+                result.Likecomment += 1;
+                await _db.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+        public async Task<bool> disLikeComment(string Idcomment)
+        {
+            var result = await _db.BinhLuans.Where(x => x.IdComment.Equals(Idcomment)).SingleOrDefaultAsync();
+            if (result != null)
+            {
+                result.Dislikecomment = result.Dislikecomment ?? 0;
+                result.Dislikecomment += 1;
+                await _db.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+        public async Task<bool> unlikeComment(string Idcomment)
+        {
+            var result = await _db.BinhLuans.Where(x => x.IdComment.Equals(Idcomment)).SingleOrDefaultAsync();
+            if (result != null)
+            {
+                result.Likecomment = result.Likecomment ?? 0;
+                if(result.Likecomment > 0)
+                {
+                    result.Likecomment -= 1;
+                }
+                await _db.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+        public async Task<bool> undisLikeComment(string Idcomment)
+        {
+            var result = await _db.BinhLuans.Where(x => x.IdComment.Equals(Idcomment)).SingleOrDefaultAsync();
+            if (result != null)
+            {
+                result.Dislikecomment = result.Dislikecomment ?? 0;
+                if(result.Dislikecomment> 0)
+                {
+                    result.Dislikecomment -= 1;
+                }
+                await _db.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+        public async Task<int> numberComment(string mangaId)
+        {
+            var result = await _db.BinhLuans.Where(x => x.MangaId.Equals(mangaId)).CountAsync();
+            return result;
         }
         private string RandomNumber()
         {

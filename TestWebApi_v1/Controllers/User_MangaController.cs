@@ -123,7 +123,8 @@ namespace TestWebApi_v1.Controllers
         [Route("GetListComment/{ChapterId}")]
         public async Task<List<danhSachBinhLuan>> GetListCommentByChapter(string ChapterId)
         {
-            var result =await _userMangaModel.danhSachBinhLuanTheoChuuong(ChapterId);
+            string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+            var result =await _userMangaModel.danhSachBinhLuanTheoChuuong(ChapterId, requestUrl);
             if (result != null)
             {
                 return result;
@@ -175,6 +176,42 @@ namespace TestWebApi_v1.Controllers
         public async Task<bool> RatingManga([FromForm] string MangaId, [FromForm] string star)
         {
             var result=await _userMangaModel.DanhgiaTruyen(MangaId, star);
+            return result;
+        }
+
+        [HttpPost]
+        [Route("like_comment")]
+        public async Task<bool> likeComment([FromForm] string idcomment)
+        {
+            var result = await _userMangaModel.likeComment(idcomment);
+            return result;
+        }
+        [HttpPost]
+        [Route("dislike_comment")]
+        public async Task<bool> dislikeComment([FromForm] string idcomment)
+        {
+            var result = await _userMangaModel.disLikeComment(idcomment);
+            return result;
+        }
+        [HttpPost]
+        [Route("un_like_comment")]
+        public async Task<bool> unlikeComment([FromForm] string idcomment)
+        {
+            var result = await _userMangaModel.likeComment(idcomment);
+            return result;
+        }
+        [HttpPost]
+        [Route("un_dislike_comment")]
+        public async Task<bool> undislikeComment([FromForm] string idcomment)
+        {
+            var result = await _userMangaModel.disLikeComment(idcomment);
+            return result;
+        }
+        [HttpGet]
+        [Route("comment_count/{mangaid}")]
+        public async Task<int> numbercomment(string mangaid)
+        {
+            var result = await _userMangaModel.numberComment(mangaid);
             return result;
         }
     }

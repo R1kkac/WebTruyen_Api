@@ -748,6 +748,43 @@ namespace TestWebApi_v1.Repositories
             return a;
 
         }
+        //Tìm kiếm truyện nâng cao theo tất cả thể loại
+        public async Task<List<botruyenView>> getMangaByCategoriesAll(List<string> listCategories, string requestUrl)
+        {
+            //var result = await _db.BoTruyens
+            //    .Include(boTruyen => boTruyen.Genres)
+            //    .ToListAsync();
+
+            //result = result
+            //    .Where(boTruyen => listCategories.All(categoryId => boTruyen.Genres.Any(type => type.GenreId == int.Parse(categoryId))))
+            //    .ToList();
+
+            List<BoTruyen> listmanga = await _db.BoTruyens.Take(20).ToListAsync();
+            foreach(var item in listmanga)
+            {
+                item.Genres = await _db.BoTruyens.Where(x => x.MangaId == item.MangaId).SelectMany(y => y.Genres).ToListAsync();
+            }
+            var result = listmanga.Where(x => listCategories.All(y => x.Genres.Any(z => z.GenreId == int.Parse(y)))).ToList();
+            List<botruyenView> a = new List<botruyenView>();
+            foreach (var item in result)
+            {
+                RatingManga? rating = await _db.RatingMangas.FromSqlRaw("select * from RatingManga where Mangaid = @p0", item.MangaId).FirstOrDefaultAsync();
+                var map1 = _mapper.Map<BotruyenProfile>(item);
+                map1.requesturl = requestUrl;
+                map1.routecontroller = "Truyen-tranh";
+                var mapmanga = _mapper.Map<botruyenView>(map1);
+                mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
+                List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == item.MangaId).OrderByDescending(y => y.ChapterDate)
+                    .Take(3).ToListAsync();
+                var listCategory = await _db.BoTruyens.Where(x => x.MangaId == item.MangaId).SelectMany(y => y.Genres).ToListAsync();
+                var mapchapter = _mapper.Map<List<chapterView2>>(listChapter);
+                mapmanga.ListChaper = mapchapter;
+                mapmanga.Listcategory = listCategory;
+                a.Add(mapmanga);
+            }
+            return a;
+
+        }
         //Tải danh sách topmanga default
         public async Task<List<TopManga>> getTopMangaDefault(string requestUrl, string routeController)
         {

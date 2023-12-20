@@ -15,6 +15,8 @@ namespace TestWebApi_v1.Models.DbContext
         public string MangaId { get; set; } = null!;
         public string? ChapterId { get; set; }
         public string? CommentData { get; set; }
+        public int? Likecomment { get; set; }
+        public int? Dislikecomment { get; set; }
         public DateTimeOffset? DateComment { get; set; }
 
         public virtual ChuongTruyen? Chapter { get; set; }
@@ -31,6 +33,8 @@ namespace TestWebApi_v1.Models.DbContext
         public string MangaId { get; set; } = null!;
         public string? ChapterId { get; set; }
         public string? commentData { get; set; }
+        public int? Likecomment { get; set; }
+        public int? Dislikecomment { get; set; }
         public DateTimeOffset? date { get; set; }
     }
     public class danhSachReplyBinhLuan
@@ -39,6 +43,7 @@ namespace TestWebApi_v1.Models.DbContext
         public string UserName { get; set; } = null!;
         public string UserAvatar { get; set; } = null!;
         public string IdReply { get; set; } = null!;
+        public string? NameReply { get; set; }
         public string? ReplyData { get; set; }
         public DateTimeOffset? DateReply { get; set; }
     }
