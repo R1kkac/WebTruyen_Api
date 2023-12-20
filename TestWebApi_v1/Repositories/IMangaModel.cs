@@ -18,7 +18,7 @@ namespace TestWebApi_v1.Repositories
         Task<bool> XoaTruyen(string iduUser, string MangaId);
         Task<List<botruyenView>> getMangaNewUpdate(string requestUrl, string routeController);
         Task<int> getPageNumber();
-        Task<List<botruyenViewforTopmanga>> getTopmanga(int page, int number, int type, string requestUrl);
+        Task<ResultForTopView> getTopmanga(int page, int number, int type, string requestUrl);
         Task<List<botruyenView>> getMangaByCategories(List<string> listCategories, string requestUrl, string routeController);
         Task<string> getMangaByCategoriesAll(List<string> listCategories, string requestUrl);
         Task<List<TopManga>> Topmangabydate(int? page, string requestUrl, string routeController);
@@ -42,7 +42,7 @@ namespace TestWebApi_v1.Repositories
         string LayAnh(string idManga, string idChapter, string image);
         //Theloai
         Task<List<CategoryView>> getListCategory();
-        Task<List<botruyenView>> getMangaByCategory(string id, string requestUrl, string routeController);
+        Task<ResultForMangaView> getMangaByCategory(string id,string pagenumber, string pagesize, string requestUrl);
 
     }
 }
