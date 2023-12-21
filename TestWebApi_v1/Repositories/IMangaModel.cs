@@ -9,13 +9,21 @@ namespace TestWebApi_v1.Repositories
         //Botruyen
         Task<IEnumerable<Searchmanga>> responeSearch(string value, string url);
         Task<IEnumerable<Searchmanga>> search();
-        Task<IEnumerable<botruyenView>> LayDanhSachTruyenTheoPage(int? page, string requestUrl, string routeController);
-        Task<botruyenView?> LayThongTinTruyen(string MangaId, string requestUrl, string routeController);
+        Task<IEnumerable<botruyenView>> LayTatCaTruyen(string requestUrl, string routeController);
+
+		Task<IEnumerable<botruyenView>> LayDanhSachTruyenTheoPage(int? page, string requestUrl, string routeController);
+        Task<IEnumerable<botruyenView>> LayTatCaTruyenTheoUserId(string userId, string requestUrl, string routeController);
+
+		Task<botruyenView?> LayThongTinTruyen(string MangaId, string requestUrl, string routeController);
         Task<List<botruyenViewforTopmanga>> danhSahcBotruyen(int type, int pagenumber, int pagesize, string requesurl);
         string? LayAnhTruyen(string imageManga);
-        Task<bool> TaoTruyen(string idUser, string Manga, IFormFile? MangaImage);
-        Task<bool> SuaTruyen(string Id, string Manga, IFormFile? MangaImage);
-        Task<bool> XoaTruyen(string iduUser, string MangaId);
+        Task<IEnumerable<string>> LayDanhSachTenTruyen();
+
+		Task<bool> TaoTruyen(string idUser, AddeditView mangaDto, IFormFile? MangaImage);
+		Task<bool> SuaTruyen(string idUser, AddeditView mangaDto, IFormFile? MangaImage);
+        Task<bool> UpdateStatusAsync(string mangaId, string idUser);
+
+		Task<bool> XoaTruyen(string iduUser, string MangaId);
         Task<List<botruyenView>> getMangaNewUpdate(string requestUrl, string routeController);
         Task<int> getPageNumber();
         Task<ResultForTopView> getTopmanga(int page, int number, int type, string requestUrl);
@@ -26,14 +34,14 @@ namespace TestWebApi_v1.Repositories
         Task<List<TopManga>> TopmangabyYear(int? page, string requestUrl, string routeController);
         Task<List<TopManga>> getTopMangaDefault(string requestUrl, string routeController);
         Task<int> numbermanga();
+        Task<Dictionary<DateTime, int>> GetDailyPublishedStoryCountAsync();
 
 
 
 
 
-
-        //Chuongttuyen
-        Task<IEnumerable<ChuongTruyen>> LayTatcaChuongTruyen();
+		//Chuongttuyen
+		Task<IEnumerable<ChuongTruyen>> LayTatcaChuongTruyen();
         Task<bool> TaoChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl);
         Task<bool> SuaChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl);
         Task<bool> XoaChuongTruyen(string MangaId, string ChapterId);
@@ -42,7 +50,10 @@ namespace TestWebApi_v1.Repositories
         string LayAnh(string idManga, string idChapter, string image);
         //Theloai
         Task<List<CategoryView>> getListCategory();
-        Task<ResultForMangaView> getMangaByCategory(string id,string pagenumber, string pagesize, string requestUrl);
+        Task<bool> AddTheLoai(CategoryAddedit categoryAddedit);
+        Task<bool> DeleteTheLoai(int genreId);
+
+		Task<ResultForMangaView> getMangaByCategory(string id,string pagenumber, string pagesize, string requestUrl);
 
     }
 }
