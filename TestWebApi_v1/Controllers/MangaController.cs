@@ -602,5 +602,11 @@ namespace TestWebApi_v1.Controllers
 			var count = await _mangaModel.GetDailyPublishedStoryCountAsync();
 			return Ok(count);
 		}
+		[HttpGet("GetAllType")]
+		public IActionResult GetAll()
+		{
+			var typeMangas = _mangaModel.GetAllTypeMangas();
+			return Ok(typeMangas);
+		}
 	}
 }

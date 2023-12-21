@@ -890,6 +890,11 @@ namespace TestWebApi_v1.Repositories
                 return map;
             }
         }
+        //Lấy tất cả TypeManga
+		public IEnumerable<TypeManga> GetAllTypeMangas()
+		{
+			return _db.TypeMangas.ToList();
+		}
 
 		//Thêm thể loại
 		public async Task<bool> AddTheLoai(CategoryAddedit categoryAddedit)
