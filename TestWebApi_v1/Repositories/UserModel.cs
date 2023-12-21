@@ -26,6 +26,7 @@ namespace TestWebApi_v1.Repositories
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
+        private readonly SignInManager<User> _SignUser;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly IMangaModel _mangaModel;
@@ -35,7 +36,8 @@ namespace TestWebApi_v1.Repositories
         private readonly IMapper _mapper;
 
         public UserModel(UserManager<User> userManager, RoleManager<Role> roleManager,IConfiguration configuration,IMapper mapper,
-            IEmailService emailService, IMangaModel mangaModel, WebTruyenTranh_v2Context db, IWebHostEnvironment evn, IServices sv)
+            IEmailService emailService, IMangaModel mangaModel, WebTruyenTranh_v2Context db, IWebHostEnvironment evn, IServices sv,
+            SignInManager<User> SignUser)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -46,6 +48,7 @@ namespace TestWebApi_v1.Repositories
             _evn = evn;
             _sv = sv;
             _mapper = mapper;
+            _SignUser = SignUser;
         }
         //User
         //Đăng ký User
@@ -92,24 +95,47 @@ namespace TestWebApi_v1.Repositories
                 return new ResponeRegister { Value = false, Message = $"Đã xảy ra lỗi trong quá trình tạo tài khoản {user.Email} ",email= user.Email };
             }
         }
+        public async Task<bool> thayDoiMatKhau(string userchangepassword)
+        {
+            var user = JsonConvert.DeserializeObject<changePasswordUser>(userchangepassword)!;
+            var TaiKhoan = await _userManager.FindByEmailAsync(user.email);
+            if (TaiKhoan != null)
+            {
+                var checkPassword = _userManager.PasswordHasher.VerifyHashedPassword(TaiKhoan, TaiKhoan.PasswordHash, user.oldpassword);
+                if(checkPassword == PasswordVerificationResult.Success)
+                {
+                    var result = await _userManager.ChangePasswordAsync(TaiKhoan, user.oldpassword, user.newpassword);
+                    if (result.Succeeded)
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
         public async Task<ResultService> SuaThongTinTaiKhoan(string User,IFormFile? Avatar)
         {
-            var user = JsonConvert.DeserializeObject<UpdateUser>(User)!;
-            var TaiKhoan = await _userManager.FindByEmailAsync(user.Email);
+            var user = JsonConvert.DeserializeObject<EditUser>(User)!;
+            var TaiKhoan = await _userManager.FindByEmailAsync(user.email);
             if (TaiKhoan != null)
             {
                 string mangaImagePath = Path.Combine(_evn.ContentRootPath, "Manga", "Avatar");
                 var filepath = $"{mangaImagePath}/{TaiKhoan.Avatar}";
                 _sv.DeleteImage(filepath);
                 if (Avatar != null) await _sv.UpLoadimage(Avatar, mangaImagePath);
-                TaiKhoan.Avatar = Avatar!.FileName ?? null;
-                TaiKhoan.Name = user.Name ?? null;
-                //Thay đổi mật khẩu với 2 tham số là mật khẩu cũ tự nhập chưa hash và mật khảu mới
-                await _userManager.ChangePasswordAsync(TaiKhoan, TaiKhoan.PasswordHash, user.NewPassword);
+                TaiKhoan.Avatar = Avatar?.FileName ?? TaiKhoan.Avatar;
+                TaiKhoan.Name = (user.name!.Any())? user.name: TaiKhoan.Name;
+                TaiKhoan.PhoneNumber= (user.phone!.Any()) ? user.phone : TaiKhoan.PhoneNumber;
+                ////Thay đổi mật khẩu với 2 tham số là mật khẩu cũ tự nhập chưa hash và mật khảu mới
+                //await _userManager.ChangePasswordAsync(TaiKhoan, TaiKhoan.PasswordHash, user.NewPassword);
 
                 //tạo token để gửi thay đổi số điện thoại
-                var token = await _userManager.GenerateChangePhoneNumberTokenAsync(TaiKhoan, user.PhoneNumber);
-                var message = new Message(new string[] { user.Email! }, "Confirm PhonNumber", token);
+                var token = await _userManager.GenerateChangePhoneNumberTokenAsync(TaiKhoan, user.phone);
+                var message = new Message(new string[] { user.email! }, "Confirm PhonNumber", token);
                 _emailService.SendEmail(message);
 
                 //cập nhật thông tin user hiện tại
@@ -123,7 +149,6 @@ namespace TestWebApi_v1.Repositories
             }
             return new ResultService { Value=false, Message="Đã xảy ra lỗi" };
         }
-
         public async Task<UserInfo?> layThongTinNguoiDung(string idUser)
         {
             var result = await _userManager.FindByIdAsync(idUser);

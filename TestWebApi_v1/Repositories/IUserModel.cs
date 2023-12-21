@@ -15,6 +15,7 @@ namespace TestWebApi_v1.Repositories
         Task<ResponeRegister> DangKytaiKhoan(string User);
         Task<ResultService> SuaThongTinTaiKhoan(string User, IFormFile? Avatar);
         Task<ResultService> XoataiKhoan(string email);
+        Task<bool> thayDoiMatKhau(string userchangepassword);
 
         Task<ResultService> ThemRoleUser(string idUser, string role);
         Task<ResultService> XoaRoleUser(string idUser, string role);

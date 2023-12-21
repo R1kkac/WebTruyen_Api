@@ -339,6 +339,14 @@ namespace TestWebApi_v1.Controllers
             }
             return StatusCode(StatusCodes.Status400BadRequest,
                     new Respone { Status = "Failed", Message = result.Message });
+        
+        }
+        [HttpPut]
+        [Route("change_password_user")]
+        public async Task<bool> changePasswordUser([FromForm] string User)
+        {
+            var result= await _userModel.thayDoiMatKhau(User);
+            return result;
         }
         //Thay đối số điện thoại thông qua token được gửi đến email (có thể dùng sms phone number)
         [HttpPut("ChangePhone")]
