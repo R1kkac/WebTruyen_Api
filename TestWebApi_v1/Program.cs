@@ -220,5 +220,5 @@ app.UseAuthorization();
 //dùng session
 app.UseSession();
 app.MapControllers();
-app.MapHub<ThongBaoNguoiDung>("/Notification");
+app.MapHub<ChatRealTime>("/Notification");
 app.Run();

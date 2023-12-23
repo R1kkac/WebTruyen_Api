@@ -16,6 +16,8 @@ namespace TestWebApi_v1.Models.DbContext
             ReplyComments = new HashSet<ReplyComment>();
             KenhChatUsers = new HashSet<KenhChatUser>();
             UserRoomChats = new HashSet<UserRoomChat>();
+            UserJoinChats = new HashSet<UserJoinChat>();
+
 
         }
 
@@ -34,6 +36,8 @@ namespace TestWebApi_v1.Models.DbContext
         public virtual ICollection<ReplyComment> ReplyComments { get; set; }
         public virtual ICollection<KenhChatUser> KenhChatUsers { get; set; }
         public virtual ICollection<UserRoomChat> UserRoomChats { get; set; }
+        public virtual ICollection<UserJoinChat> UserJoinChats { get; set; }
+
     }
     public class UserViewChat
     {
