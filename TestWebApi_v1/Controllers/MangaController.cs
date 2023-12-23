@@ -22,14 +22,12 @@ namespace TestWebApi_v1.Controllers
         private readonly IMemoryCache _memoryCache;
         private ILogger<MangaController> _logger;
         private readonly IMangaModel _mangaModel;
-        private readonly IHubContext<ThongBaoNguoiDung> _tb;
         private readonly ThongBaoNguoiDung _tb2;
         private readonly UserManager<User> _userManager;
-        public MangaController(IMangaModel mangaModel, IHubContext<ThongBaoNguoiDung> tb, ILogger<MangaController> logger,
+        public MangaController(IMangaModel mangaModel, ILogger<MangaController> logger,
             IMemoryCache memorycache,UserManager<User> userManager,ThongBaoNguoiDung tb2)
         {
             _mangaModel = mangaModel;
-            _tb = tb;
             _logger = logger;
             _memoryCache = memorycache;
             _userManager = userManager;

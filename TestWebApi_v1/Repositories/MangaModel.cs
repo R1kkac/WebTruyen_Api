@@ -765,6 +765,10 @@ namespace TestWebApi_v1.Repositories
         //Tìm kiếm truyện nâng cao theo tất cả thể loại
         public async Task<string> getMangaByCategoriesAll(List<string> listCategories, string requestUrl)
         {
+            //var test = await (from theloai in _db.TheLoais
+            //                  where listCategories.All(x => theloai.GenreId.Equals(x))
+            //                  select theloai.Mangas
+            //                  ).ToListAsync();
             List<BoTruyen> listmanga = await _db.BoTruyens
                 .Include(boTruyen => boTruyen.Genres)
                 .Include(chapter => chapter.ChuongTruyens.Take(3))

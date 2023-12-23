@@ -13,6 +13,8 @@ namespace TestWebApi_v1.Models.DbContext
             bookmarks=new HashSet<Bookmark>();
             RatingMangas = new HashSet<RatingManga>();
             BinhLuans = new HashSet<BinhLuan>();
+            ChatRooms = new HashSet<ChatRoom>();
+
 
         }
 
@@ -38,6 +40,7 @@ namespace TestWebApi_v1.Models.DbContext
         public virtual ICollection<RatingManga> RatingMangas { get; set; }
         public virtual TypeManga? TypeNavigation { get; set; }
         public virtual ICollection<BinhLuan> BinhLuans { get; set; }
+        public virtual ICollection<ChatRoom> ChatRooms { get; set; }
 
 
     }
