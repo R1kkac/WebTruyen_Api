@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using TestWebApi_v1.Models;
 using TestWebApi_v1.Models.DbContext;
 using TestWebApi_v1.Models.ViewModel.UserView;
@@ -35,8 +36,9 @@ namespace TestWebApi_v1.Service.Hubs
         {
             try
             {
-                var Room= JsonSerializer.Deserialize<RoomChat>(room);
-                var checkRoomExits=await _db.ChatRooms.AnyAsync(x=> x.RoomId.Equals(Room!.RoomId) && x.Status ==true);
+                var randomId = Guid.NewGuid().ToString().Substring(0, 6);
+                var Room= JsonSerializer.Deserialize<RoomChatPost>(room);
+                var checkRoomExits=await _db.ChatRooms.AnyAsync(x=> x.RoomId.Equals(Room!.MangaId) && x.Status ==true);
                 if(checkRoomExits == true)
                 {
                     await Clients.User(ClaimTypes.NameIdentifier).SendAsync("notification", "Phòng đã tồn tại");
@@ -45,15 +47,22 @@ namespace TestWebApi_v1.Service.Hubs
                 {
                     ChatRoom a = new ChatRoom
                     {
-                        RoomId = Guid.NewGuid().ToString().Substring(0, 6),
-                        MangaId = Room!.RoomId,
+                        RoomId = randomId,
+                        MangaId = Room!.MangaId,
                         TimeStart = DateTime.UtcNow,
                         EndTime = null,
                         Status = true,
                     };
                     await _db.ChatRooms.AddAsync(a);
                     await _db.SaveChangesAsync();
-                    ChatManager.NewRoomChat(Room);
+                    RoomChat x = new RoomChat
+                    {
+                        RoomId = a.RoomId,
+                        RoomName = Room.RoomName,
+                        image = Room.image,
+                        MangaId= Room.MangaId
+                    };
+                    ChatManager.NewRoomChat(x);
                     await listRoomChatActive();
                     await Clients.User(Context.UserIdentifier!).SendAsync("notification", "Tạo phòng thành công");
                 }
@@ -75,52 +84,88 @@ namespace TestWebApi_v1.Service.Hubs
             {
                 if(ChatManager.CheckUserInRoom(user!.Id!, roomId) == null)
                 {
-                    UserJoinChat a = new UserJoinChat
+                    var Room = await _db.ChatRooms.Where(x => x.RoomId.Equals(roomId) && x.Status == true)
+                        .Include(y=> y.UserJoinChats)
+                        .SingleOrDefaultAsync(); ;
+                    if(Room != null)
                     {
-                        UserId = user!.Id!,
-                        RoomId = roomId,
-                        Status = true,
-                    };
-                    await _db.UserJoinChats.AddAsync(a);
-                    await _db.SaveChangesAsync();
-                    user_chat x = new user_chat
-                    {
-                        id = user.Id!,
-                        name = user.Name!,
-                        avatar = user.Avatar,
-                        messages = new List<message_chat>(),
-                    };
-                    ChatManager.AddUserToRoom(roomId, x);
-                    await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-                    await Clients.Group(roomId).SendAsync("user_in_room", a);
-
-   
-                }
-                else
-                {
-                    UserJoinChat? a = await _db.UserJoinChats.FindAsync(user!.Id!);
-                    if(a != null)
-                    {
-                        a.Status = true;
-                        await _db.SaveChangesAsync();
-                        user_chat x = new user_chat
+                        UserJoinChat a = new UserJoinChat
                         {
-                            id = user.Id!,
-                            name = user.Name!,
-                            avatar = user.Avatar,
-                            messages = new List<message_chat>(),
+                            UserId = user!.Id!,
+                            RoomId = roomId,
+                            Status = true,
                         };
-                        ChatManager.AddUserToRoom(roomId, x);
-                        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-                        await Clients.Group(roomId).SendAsync("user_in_room", a);
+                        if(Room.UserJoinChats.Any(x=> x.RoomId.Equals(a.RoomId) && x.UserId.Equals(a.UserId)) == false)
+                        {
+                            Room.UserJoinChats.Add(a);
+                            await _db.SaveChangesAsync();
+                            user_chat z = new user_chat
+                            {
+                                id = user.Id!,
+                                name = user.Name!,
+                                avatar = user.Avatar,
+                                messages = new List<message_chat>(),
+                            };
+                            ChatManager.AddUserToRoom(roomId, z);
+                            var data = System.Text.Json.JsonSerializer.Serialize(a, new JsonSerializerOptions
+                            {
+                                ReferenceHandler = ReferenceHandler.Preserve
+                            });
+                            await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+                            await Clients.Group(roomId).SendAsync("user_in_room", z);
+                        }
+                        else
+                        {
+                            var userinroom = Room.UserJoinChats.Where(x => x.RoomId.Equals(roomId) && x.UserId.Equals(user.Id)).SingleOrDefault();
+                            if (userinroom != null)
+                            {
+                                userinroom.Status = true;
+                                await _db.SaveChangesAsync();
+                                user_chat z = new user_chat
+                                {
+                                    id = user.Id!,
+                                    name = user.Name!,
+                                    avatar = user.Avatar,
+                                    messages = new List<message_chat>(),
+                                };
+                                ChatManager.AddUserToRoom(roomId, z);
+                                await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+                                await Clients.Group(roomId).SendAsync("user_in_room", z);
 
 
-                    }
-                }
+                            }
+                        }
+
+                    }                    
+                }               
             }
+        }
+        public async Task userLeaveChatRoom(string userId, string roomId)
+        {
+            var user = await _db.ChatRooms
+                 .Where(x => x.RoomId.Equals(roomId))
+                 .Include(y => y.UserJoinChats)
+                 .Select(z => z.UserJoinChats.FirstOrDefault(h => h.UserId.Equals(userId)))
+                 .SingleOrDefaultAsync();
+            if (user != null)
+            {
+                user.Status = false;
+                await _db.SaveChangesAsync();
+                var userInRoom = ChatManager.FindUserInRoom(roomId, user.UserId);
+                if (userInRoom != null)
+                {
+                    await Clients.Groups(roomId).SendAsync("cur_users_leave_room", userInRoom);
+                    ChatManager.RemoveUserFromGroup(roomId, userId);
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomId);
+                }    
+            }
+        }
+        public async Task GetCurUserInRoom(string roomId)
+        {
+            var Users = ChatManager.CurrentUsersInRoom(roomId);
+            await Clients.Groups(roomId).SendAsync("cur_users_in_room", Users);
 
         }
-
     }
     public class ChatManager
     {
@@ -218,27 +263,43 @@ namespace TestWebApi_v1.Service.Hubs
         {
             if (UsersChat.TryGetValue(roomId, out var userInRoom))
             {
-                return userInRoom.Where(x => x.id == userId).SingleOrDefault();
+                return userInRoom.Where(x => x.id.Equals(userId)).SingleOrDefault();
+            }
+            return null;
+        }
+        public static List<user_chat>? CurrentUsersInRoom(string roomId)
+        {
+            if(UsersChat.TryGetValue(roomId,out var ListUsers))
+            {
+                return ListUsers;
             }
             return null;
         }
         ////xóa user khỏi một group {chuyển room, nếu dùng connectionid để xóa thì có nghĩa một uer có thể dùng nhiều thiết bị vào cùng một phòng}
-        //public static void RemoveUserFromGroup(string groupName, string userId)
-        //{
-        //    if (Rooms.ContainsKey(groupName) && Rooms[groupName] != null)
-        //    {
-        //        UserChat? user = Rooms[groupName].FirstOrDefault(x => x.userId == userId);
-        //        if (user != null)
-        //        {
-        //            Rooms[groupName].Remove(user);
-        //        }
-        //        // Xóa group khỏi dictionary khi không còn user nào trong đó
-        //        //if (groups[groupName].Count == 0)
-        //        //{
-        //        //    groups.Remove(groupName);
-        //        //}
-        //    }
-        //}
+        public static void RemoveUserFromGroup(string roomId, string userId)
+        {
+            if (UsersChat.ContainsKey(roomId) && UsersChat[roomId] != null)
+            {
+                user_chat? user = UsersChat[roomId].SingleOrDefault(x => x.id.Equals(userId));
+                if (user != null)
+                {
+                    UsersChat[roomId].Remove(user);
+                }
+                //Xóa group khỏi dictionary khi không còn user nào trong đó
+                if (UsersChat[roomId].Count == 0)
+                {
+                    UsersChat.Remove(roomId);
+                }
+            }
+        }
+        public static user_chat? FindUserInRoom(string roomId, string userId)
+        {
+            if(UsersChat.TryGetValue(roomId, out var litRoom))
+            {
+                return UsersChat[roomId].SingleOrDefault(x => x.id.Equals(userId));
+            }
+            return null;
+        }
         ///// <summary>
         ///// Xóa room chat và toàn bộ user của nó
         ///// </summary>
@@ -351,6 +412,13 @@ namespace TestWebApi_v1.Service.Hubs
     public class RoomChat
     {
         public string RoomId { get; set; } = null!;
+        public string MangaId { get; set; } = null!;
+        public string RoomName { get; set; } = null!;
+        public string? image { get; set; }
+    }
+    public class RoomChatPost
+    {
+        public string MangaId { get; set; } = null!;
         public string RoomName { get; set; } = null!;
         public string? image { get; set; }
     }
