@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using TestWebApi_v1.Models;
 using TestWebApi_v1.Models.TruyenTranh.MangaView;
+using TestWebApi_v1.Service.Hubs;
 using X.PagedList;
 
 namespace TestWebApi_v1.Repositories
@@ -57,6 +58,7 @@ namespace TestWebApi_v1.Repositories
                 //_cache.SetString("ListManga", result.ToString());
                 
                 await MangaviewCount.PushViewToDatabase();
+                await ChatManager.SaveChatToDatabase();
 
 
                 // Đợi một khoản thời gian trước khi lặp lại
