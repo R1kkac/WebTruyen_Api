@@ -231,24 +231,6 @@ namespace TestWebApi_v1.Service.Hubs
             return Rooms[ListRoomName].Any(x => x.RoomId.Equals(roomId));
 
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         /// <summary>
         /// Thêm user vào room chat
         /// </summary>

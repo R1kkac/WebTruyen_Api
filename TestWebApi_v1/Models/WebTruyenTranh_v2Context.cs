@@ -27,19 +27,11 @@ namespace TestWebApi_v1.Models
         public virtual DbSet<Bookmark> bookmark { get; set; } = null!;
         public virtual DbSet<BinhLuan> BinhLuans { get; set; } = null!;
         public virtual DbSet<ReplyComment> ReplyComments { get; set; } = null!;
-        public virtual DbSet<UserRoomChat> UserRoomChats { get; set; } = null!;
-        public virtual DbSet<DataUserChat> DataUserChats { get; set; } = null!;
-        public virtual DbSet<KenhChatUser> KenhChatUsers { get; set; } = null!;
         public virtual DbSet<RatingManga> RatingMangas { get; set; } = null!;
         public virtual DbSet<TypeManga> TypeMangas { get; set; } = null!;
         public virtual DbSet<Datachat> Datachats { get; set; } = null!;
         public virtual DbSet<UserJoinChat> UserJoinChats { get; set; } = null!;
         public virtual DbSet<ChatRoom> ChatRooms { get; set; } = null!;
-
-
-
-
-
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -334,68 +326,7 @@ namespace TestWebApi_v1.Models
                     .HasForeignKey(d => d.IdUserReply)
                     .HasConstraintName("FK_Reply_User");
             });
-            modelBuilder.Entity<UserRoomChat>(entity =>
-            {
-                entity.ToTable("User_RoomChat");
-
-                entity.Property(e => e.Id)
-                    .HasMaxLength(6)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.IdChatRoom)
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.IdUser).HasMaxLength(450);
-
-                entity.HasOne(d => d.IdChatRoomNavigation)
-                    .WithMany(p => p.UserRoomChats)
-                    .HasForeignKey(d => d.IdChatRoom)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_User_RoomChat_KenhChatUser");
-
-                entity.HasOne(d => d.IdUserNavigation)
-                    .WithMany(p => p.UserRoomChats)
-                    .HasForeignKey(d => d.IdUser)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_User_RoomChat_Users");
-            });
-            modelBuilder.Entity<DataUserChat>(entity =>
-            {
-                entity.ToTable("Data_User_Chat");
-
-                entity.Property(e => e.Id)
-                    .HasMaxLength(6)
-                    .IsUnicode(false)
-                    .HasColumnName("id");
-
-                entity.Property(e => e.IdUserChatRoom)
-                    .HasMaxLength(6)
-                    .IsUnicode(false);
-
-                entity.HasOne(d => d.IdUserChatRoomNavigation)
-                    .WithMany(p => p.DataUserChats)
-                    .HasForeignKey(d => d.IdUserChatRoom)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Data_User_Chat_User_RoomChat");
-            });
-
-            modelBuilder.Entity<KenhChatUser>(entity =>
-            {
-                entity.ToTable("KenhChatUser");
-
-                entity.Property(e => e.Id)
-                    .HasMaxLength(10)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.NguoiTao).HasMaxLength(450);
-
-                entity.HasOne(d => d.NguoiTaoNavigation)
-                    .WithMany(p => p.KenhChatUsers)
-                    .HasForeignKey(d => d.NguoiTao)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_KenhChatUser_Users");
-            });
+        
             modelBuilder.Entity<ChatRoom>(entity =>
             {
                 entity.HasKey(e => e.RoomId)
