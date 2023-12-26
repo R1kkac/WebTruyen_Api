@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using TestWebApi_v1.Models;
+using TestWebApi_v1.Models.DbContext;
 using TestWebApi_v1.Models.TruyenTranh.MangaView;
 using TestWebApi_v1.Service.Hubs;
 using X.PagedList;
@@ -13,10 +14,12 @@ namespace TestWebApi_v1.Repositories
         private readonly WebTruyenTranh_v2Context _db = new WebTruyenTranh_v2Context();
         private readonly IMemoryCache _memoryCache;
         private readonly IDistributedCache _cache;
-        public MyBackgroundService(IMemoryCache memoryCache ,IDistributedCache cache)
+        private readonly ChatRealTime _chat;
+        public MyBackgroundService(IMemoryCache memoryCache ,IDistributedCache cache, ChatRealTime chat)
         { 
             _memoryCache = memoryCache;
             _cache = cache;
+            _chat = chat;
         }
         /// <summary>
         /// Cẩn thận khai báo các dependency injection vì phạm vi của mybackgroundservice là Singleton còn có thể các dịch vụ khác
@@ -36,33 +39,50 @@ namespace TestWebApi_v1.Repositories
                 int pageSize = 10; // Số lượng bản ghi trên mỗi trang
                 int pageNumber = 1; // Trang hiện tại
                 var dsbotruyen = await _db.BoTruyens.AsNoTracking().ToPagedListAsync(pageNumber, pageSize);
-                var result = new List<botruyenView>();
-                foreach (var a in dsbotruyen)
-                {
-                    botruyenView b = new botruyenView
-                    {
-                        MangaId = a.MangaId,
-                        MangaName = a.MangaName,
-                        MangaDetails = a.MangaDetails,
-                        MangaImage = (a.MangaImage != null) ? $"https://localhost:7132/Truyen-tranh/{a.MangaId}/{a.MangaImage}" : null,
-                        MangaAlternateName = a.MangaAlternateName,
-                        MangaAuthor = a.MangaAuthor,
-                        MangaArtist = a.MangaArtist,
-                        Type = a.Type
-                    };
-                    result.Add(b);
-                }
+                //var result = new List<BoTruyen>();
+                //foreach (var a in dsbotruyen)
+                //{
+                //    BoTruyen b = new BoTruyen
+                //    {
+                //        MangaId = a.MangaId,
+                //        MangaName = a.MangaName,
+                //        MangaDetails = a.MangaDetails,
+                //        MangaImage = (a.MangaImage != null) ? $"https://localhost:7132/Truyen-tranh/{a.MangaId}/{a.MangaImage}" : null,
+                //        MangaAlternateName = a.MangaAlternateName,
+                //        MangaAuthor = a.MangaAuthor,
+                //        MangaArtist = a.MangaArtist,
+                //        Type = a.Type,
+                //    };
+                //    result.Add(b);
+                //}
                 //cái này lưu vào bộ nhớ cục bộ
-                //_memoryCache.Set("ListManga", result);
+                _memoryCache.Set("ListManga", dsbotruyen);
                 //bộ nhớ phân táng
                 //_cache.SetString("ListManga", result.ToString());
-                
+
                 await MangaviewCount.PushViewToDatabase();
                 await ChatManager.SaveChatToDatabase();
 
-
                 // Đợi một khoản thời gian trước khi lặp lại
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); // 10 giây
+            }
+        }
+    }
+    //Auto save data for Chat-real-time
+    public class MyBackgroundService2 : BackgroundService
+    {
+        private readonly ChatRealTime _chat;
+        public MyBackgroundService2(ChatRealTime chat)
+        {
+            _chat = chat;
+        }
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await _chat.CloseAndSaveChat();
+                await ChatManager.AuToCloseChat();
+                await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
             }
         }
     }

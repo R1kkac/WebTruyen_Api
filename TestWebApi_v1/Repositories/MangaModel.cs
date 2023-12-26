@@ -75,37 +75,59 @@ namespace TestWebApi_v1.Repositories
         public async Task<IEnumerable<botruyenView>> LayDanhSachTruyenTheoPage(int? page, string requestUrl,string routeController)
         {
             //bộ nhớ cục bộ
-            if (_memoryCache.TryGetValue("ListManga", out List<botruyenView> list))
+            if (_memoryCache.TryGetValue("ListManga", out List<botruyenView> listdata))
             {
-                return list;
+                var result = new List<botruyenView>();
+                foreach (var a in listdata)
+                {
+                    RatingManga? rating = await _db.RatingMangas.FromSqlRaw("select * from RatingManga where Mangaid = @p0", a.MangaId).FirstOrDefaultAsync();
+                    var map1 = _mapper.Map<BotruyenProfile>(a);
+                    map1.requesturl = requestUrl;
+                    map1.routecontroller = routeController;
+                    var mapmanga = _mapper.Map<botruyenView>(map1);
+                    mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
+                    List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == a.MangaId).OrderByDescending(y => y.ChapterDate)
+                        .Take(3).ToListAsync();
+                    var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
+                    var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbyyear).FirstOrDefaultAsync();
+                    var mapchapter = _mapper.Map<List<chapterView2>>(listChapter);
+                    mapmanga.ListChaper = mapchapter;
+                    mapmanga.Listcategory = listCategory;
+                    mapmanga.View = mangaview.ToString();
+                    result.Add(mapmanga);
+                }     
+                return result;
             }
-            /*bộ nhớ phân táng IDistributedCache
-            var aad = _cache.GetString("ListManga");*/
-            int pageSize = 10; // Số lượng bản ghi trên mỗi trang
-            int pageNumber = (page ?? 1); // Trang hiện tại
-            var dsbotruyen =await _db.BoTruyens.AsNoTracking().OrderByDescending(x=>x.Dateupdate).ToPagedListAsync(pageNumber, pageSize);
-            var result =new List<botruyenView>();
-            foreach (var a in dsbotruyen)
+            else
             {
-                RatingManga? rating = await _db.RatingMangas.FromSqlRaw("select * from RatingManga where Mangaid = @p0", a.MangaId).FirstOrDefaultAsync();
-                var map1 = _mapper.Map<BotruyenProfile>(a); 
-                map1.requesturl = requestUrl;
-                map1.routecontroller = routeController;
-                var mapmanga = _mapper.Map<botruyenView>(map1);
-                mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
-                List<ChuongTruyen> listChapter= await _db.ChuongTruyens.Where(x=> x.MangaId == a.MangaId).OrderByDescending(y=>y.ChapterDate)
-                    .Take(3).ToListAsync();
-                var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
-                var mangaview= await _db.ViewCounts.Where(x=> x.Id == a.MangaId).Select(y=> y.Viewbyyear).FirstOrDefaultAsync();
-                var mapchapter= _mapper.Map<List<chapterView2>>(listChapter);
-                mapmanga.ListChaper = mapchapter;
-                mapmanga.Listcategory = listCategory;
-                mapmanga.View = mangaview.ToString();
-                result.Add(mapmanga);
+                /*bộ nhớ phân táng IDistributedCache
+                var aad = _cache.GetString("ListManga");*/
+                int pageSize = 10; // Số lượng bản ghi trên mỗi trang
+                int pageNumber = (page ?? 1); // Trang hiện tại
+                var dsbotruyen = await _db.BoTruyens.AsNoTracking().OrderByDescending(x => x.Dateupdate).ToPagedListAsync(pageNumber, pageSize);
+                var result = new List<botruyenView>();
+                foreach (var a in dsbotruyen)
+                {
+                    RatingManga? rating = await _db.RatingMangas.FromSqlRaw("select * from RatingManga where Mangaid = @p0", a.MangaId).FirstOrDefaultAsync();
+                    var map1 = _mapper.Map<BotruyenProfile>(a);
+                    map1.requesturl = requestUrl;
+                    map1.routecontroller = routeController;
+                    var mapmanga = _mapper.Map<botruyenView>(map1);
+                    mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
+                    List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == a.MangaId).OrderByDescending(y => y.ChapterDate)
+                        .Take(3).ToListAsync();
+                    var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
+                    var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbyyear).FirstOrDefaultAsync();
+                    var mapchapter = _mapper.Map<List<chapterView2>>(listChapter);
+                    mapmanga.ListChaper = mapchapter;
+                    mapmanga.Listcategory = listCategory;
+                    mapmanga.View = mangaview.ToString();
+                    result.Add(mapmanga);
+                }
+                //test thêm cache
+                //YourMethod(result);       
+                return result;
             }
-            //test thêm cache
-            //YourMethod(result);       
-            return result;
         }
         //tạo cache
         //Test thôi

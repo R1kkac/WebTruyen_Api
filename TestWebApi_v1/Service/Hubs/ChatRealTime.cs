@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using TestWebApi_v1.Models;
 using TestWebApi_v1.Models.DbContext;
 using TestWebApi_v1.Models.ViewModel.UserView;
@@ -14,11 +16,8 @@ namespace TestWebApi_v1.Service.Hubs
     [Authorize]
     public class ChatRealTime: Hub
     {
-        private readonly WebTruyenTranh_v2Context _db;
-        public ChatRealTime(WebTruyenTranh_v2Context db) 
-        {
-            _db = db;
-        }
+        private readonly WebTruyenTranh_v2Context _db= new WebTruyenTranh_v2Context();
+
         public override async Task OnConnectedAsync()
         {
             await base.OnConnectedAsync();
@@ -171,6 +170,21 @@ namespace TestWebApi_v1.Service.Hubs
             var data = ChatManager.ChatToRoom(userId, roomId, message);
             await Clients.Group(roomId).SendAsync("new_data_chat", data);
         }
+        public async Task CloseAndSaveChat()
+        {
+            if (ChatManager.Rooms.TryGetValue(ChatManager.ListRoomName, out var listRoom))
+            {
+                foreach (var room in listRoom)
+                {
+                    for(int i=3; i>=0; i--) {
+                        await Task.Delay(1000);
+                        await Clients.Group(room.RoomId).SendAsync("close_room_chat",
+                            $"Phòng chat của bạn sẽ đóng trong {i}");
+                    }
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, room.RoomId);
+                }
+            }
+        }
         public async Task GetDataChat(string roomId)
         {
             var data= ChatManager.DataChatRoom(roomId, 1,30);
@@ -180,10 +194,10 @@ namespace TestWebApi_v1.Service.Hubs
     }
     public class ChatManager
     {
-        private static Dictionary<string, List<RoomChat>> Rooms = new Dictionary<string, List<RoomChat>>();
+        public static Dictionary<string, List<RoomChat>> Rooms = new Dictionary<string, List<RoomChat>>();
         public static Dictionary<string, List<user_chat>> UsersChat = new Dictionary<string, List<user_chat>>();
         private static readonly WebTruyenTranh_v2Context _db = new WebTruyenTranh_v2Context();
-        private static string ListRoomName = "Rooms";
+        public static string ListRoomName = "Rooms";
         public static bool NewRoomChat(RoomChat room)
         {
             if (!Rooms.ContainsKey(ListRoomName))
@@ -293,7 +307,7 @@ namespace TestWebApi_v1.Service.Hubs
             message_chat data = new message_chat
             {
                 data_chat = message,
-                time_chat = $"{DateTime.UtcNow:ss:mm:hh:dd:mm:yyyy}",
+                time_chat = $"{DateTimeOffset.Now}",
             };
             user!.messages!.Add(data);
             user_chat_view b = new user_chat_view
@@ -331,23 +345,46 @@ namespace TestWebApi_v1.Service.Hubs
                 foreach(var data in room.Value)
                 {
                     var target = await _db.UserJoinChats.SingleOrDefaultAsync(x => x.RoomId.Equals(roomId) && x.UserId.Equals(data.id));
-                    if (data.messages != null)
+                    if(target != null)
                     {
-                        for (int i = 0; i < data.messages.Count; i++)
+                        if (data.messages != null)
                         {
-                            Datachat a = new Datachat
+                            for (int i = 0; i < data.messages.Count; i++)
                             {
-                                RoomId = roomId,
-                                UserId = data.id,
-                                Message = data.messages[i].data_chat,
-                                TimeChat = DateTimeOffset.Parse(data.messages[i]!.time_chat!),
-                            };
-                            target!.Datachats.Add(a);
+                                Datachat a = new Datachat
+                                {
+                                    RoomId = roomId,
+                                    UserId = data.id,
+                                    Message = data.messages[i].data_chat,
+                                    TimeChat = DateTimeOffset.Parse(data.messages[i].time_chat),
+                                };
+                                target!.Datachats.Add(a);
+                            }
+                            target.Status = false;
+                            await _db.SaveChangesAsync();
                         }
                     }
-                    await _db.SaveChangesAsync();
                     data.messages = new List<message_chat>();
                 }
+            }
+            //UsersChat.Clear();
+        }
+        public static async Task AuToCloseChat()
+        {
+            if (Rooms.ContainsKey(ListRoomName))
+            {
+                foreach(var room in Rooms[ListRoomName])
+                {
+                    var roomDB = await _db.ChatRooms.SingleOrDefaultAsync(x => x.RoomId.Equals(room.RoomId));
+                    if(roomDB != null)
+                    {
+                        roomDB.EndTime = DateTimeOffset.UtcNow;
+                        roomDB.Status = false;
+                        await _db.SaveChangesAsync();
+                    }
+                }
+                Rooms[ListRoomName] = new List<RoomChat>();
+                UsersChat.Clear();
             }
         }
       

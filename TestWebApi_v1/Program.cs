@@ -71,6 +71,8 @@ builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddSingleton<SmsService>();
 //Services
 builder.Services.AddSingleton<IServices, Services>();
+//SignalR
+builder.Services.AddSingleton<ChatRealTime>();
 
 //Thêm automapper
 //builder.Services.AddAutoMapper(typeof(Program));
@@ -188,6 +190,7 @@ builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 
 //Add auto cache {mybackgroundService}
 builder.Services.AddHostedService<MyBackgroundService>();
+builder.Services.AddHostedService<MyBackgroundService2>();
 //add Redis để làm cache thay thế cho bộ nhớ cache cục bộ {tăng hiệu năng}
 //chưa thể sử dụng vì cần có máy chủ redis {https://azure.microsoft.com/en-us/products/cache/}
 //builder.Services.AddStackExchangeRedisCache(options =>
