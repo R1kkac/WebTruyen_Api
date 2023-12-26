@@ -82,7 +82,7 @@ namespace TestWebApi_v1.Repositories
             {
                 await _chat.CloseAndSaveChat();
                 await ChatManager.AuToCloseChat();
-                await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
             }
         }
     }

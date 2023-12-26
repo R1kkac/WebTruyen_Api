@@ -17,13 +17,19 @@ namespace TestWebApi_v1.Service.Hubs
     public class ChatRealTime: Hub
     {
         private readonly WebTruyenTranh_v2Context _db= new WebTruyenTranh_v2Context();
-
         public override async Task OnConnectedAsync()
         {
+            await Clients.User(Context.UserIdentifier!).SendAsync("isdisconnect", false);
             await base.OnConnectedAsync();
         }
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
+            var listRoom = ChatManager.UsersChat.Where(x => x.Value.Any(y => y.id.Equals(Context.UserIdentifier)));
+            foreach( var room in listRoom)
+            {
+                await userLeaveChatRoom(Context.UserIdentifier!, room.Key);
+            }
+            await Clients.User(Context.UserIdentifier!).SendAsync("isdisconnect", true) ;
             await base.OnDisconnectedAsync(exception);
         }
         public async Task listRoomChatActive()
@@ -111,6 +117,8 @@ namespace TestWebApi_v1.Service.Hubs
                                 ReferenceHandler = ReferenceHandler.Preserve
                             });
                             await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+                            var Users = ChatManager.CurrentUsersInRoom(roomId);
+                            await Clients.Groups(roomId).SendAsync("cur_users_in_room", Users);
                             await Clients.Group(roomId).SendAsync("user_in_room", z);
                         }
                         else
@@ -129,6 +137,8 @@ namespace TestWebApi_v1.Service.Hubs
                                 };
                                 ChatManager.AddUserToRoom(roomId, z);
                                 await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+                                var Users = ChatManager.CurrentUsersInRoom(roomId);
+                                await Clients.Groups(roomId).SendAsync("cur_users_in_room", Users);
                                 await Clients.Group(roomId).SendAsync("user_in_room", z);
 
 
