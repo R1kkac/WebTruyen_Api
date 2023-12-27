@@ -28,7 +28,7 @@ namespace TestWebApi_v1.Repositories
         Task<List<CommentViewModel>> danhSachBinhluanCuaBoTruyen(string IdManga, int? page, int? number, string requesturl);
         Task<bool> BinhLuanChuongTruyen(string IdUser, string IdManga, string? IdChapter, string CommentData);
         Task<bool> ReplyBinhLuanChuong(string IdComment, string IdUser, string Replydata);
-        Task<List<danhSachBinhLuan>> danhSachBinhLuanTheoChuuong(string idChuong, string requesturl);
+        Task<List<danhSachBinhLuan>> danhSachBinhLuanTheoChuuong(string mangaId, string idChuong, string requesturl);
         Task<List<danhSachReplyBinhLuan>> layDanhSachPhanHoi(string idComment);
 
         //Danh gia

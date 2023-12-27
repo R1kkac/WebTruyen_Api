@@ -208,14 +208,14 @@ namespace TestWebApi_v1.Repositories
             });
         }
         //Danh sách bình luận theo chương truyện
-        public async Task<List<danhSachBinhLuan>> danhSachBinhLuanTheoChuuong(string idChuong, string requesturl)
+        public async Task<List<danhSachBinhLuan>> danhSachBinhLuanTheoChuuong(string mangaId,string idChuong, string requesturl)
         {
             //var data= (from chuongtruyen in _db.ChuongTruyens 
             //            join binhluan in _db.BinhLuans on chuongtruyen.ChapterId equals binhluan.ChapterId
             //            join user in _db.Users on binhluan.IdUser equals user.Id
             //           where chuongtruyen.ChapterId == idChuong select user).FirstOrDefaultAsync();
             var data = new List<danhSachBinhLuan>();
-            var dsBinhluan= await _db.BinhLuans.Where(x=>x.ChapterId== idChuong).ToListAsync() ?? null;
+            var dsBinhluan= await _db.BinhLuans.Where(x=> x.MangaId.Equals(mangaId) && x.ChapterId== idChuong).ToListAsync() ?? null;
             if (dsBinhluan != null)
             {
                 foreach (var item in dsBinhluan)

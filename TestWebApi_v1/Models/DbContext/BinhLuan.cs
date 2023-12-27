@@ -19,7 +19,6 @@ namespace TestWebApi_v1.Models.DbContext
         public int? Dislikecomment { get; set; }
         public DateTimeOffset? DateComment { get; set; }
 
-        public virtual ChuongTruyen? Chapter { get; set; }
         public virtual BoTruyen Manga { get; set; } = null!;
         public virtual User IdUserNavigation { get; set; } = null!;
         public virtual ICollection<ReplyComment> ReplyComments { get; set; }
