@@ -120,11 +120,11 @@ namespace TestWebApi_v1.Controllers
         }
         //Danh sách bình luận theo chương
         [HttpGet]
-        [Route("GetListComment/{ChapterId}")]
-        public async Task<List<danhSachBinhLuan>> GetListCommentByChapter(string ChapterId)
+        [Route("GetListComment/{mangaId}/{ChapterId}")]
+        public async Task<List<danhSachBinhLuan>> GetListCommentByChapter(string mangaId,string ChapterId)
         {
             string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
-            var result =await _userMangaModel.danhSachBinhLuanTheoChuuong(ChapterId, requestUrl);
+            var result =await _userMangaModel.danhSachBinhLuanTheoChuuong(mangaId,ChapterId, requestUrl);
             if (result != null)
             {
                 return result;

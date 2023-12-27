@@ -285,11 +285,6 @@ namespace TestWebApi_v1.Models
 
                 entity.Property(e => e.IdUser).HasMaxLength(450);
 
-                entity.HasOne(d => d.Chapter)
-                    .WithMany(p => p.BinhLuans)
-                    .HasForeignKey(d => d.ChapterId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Commentn_Chapter");
 
                 entity.HasOne(d => d.Manga)
                     .WithMany(p => p.BinhLuans)

@@ -8,7 +8,6 @@ namespace TestWebApi_v1.Models.DbContext
         public ChuongTruyen()
         {
             ChapterImages = new HashSet<ChapterImage>();
-            BinhLuans= new HashSet<BinhLuan>();
         }
 
         public string ChapterId { get; set; } = null!;
@@ -21,6 +20,5 @@ namespace TestWebApi_v1.Models.DbContext
 
         public virtual BoTruyen Manga { get; set; } = null!;
         public virtual ICollection<ChapterImage> ChapterImages { get; set; }
-        public virtual ICollection<BinhLuan> BinhLuans { get; set; }
     }
 }
