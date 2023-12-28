@@ -71,8 +71,45 @@ namespace TestWebApi_v1.Repositories
             var data = _mapper.Map<List<Searchmanga>>(result);
             return data;
         }
-        //Gọi danh sác truyện theo page với 3 tham số currentUrl, route, page
-        public async Task<IEnumerable<botruyenView>> LayDanhSachTruyenTheoPage(int? page, string requestUrl,string routeController)
+		//Lấy tất cả truyện
+		public async Task<IEnumerable<botruyenView>> LayTatCaTruyen(string requestUrl, string routeController)
+		{
+			// Sử dụng bộ nhớ cục bộ để caching
+			if (_memoryCache.TryGetValue("ListManga", out List<botruyenView> cachedList))
+			{
+				return cachedList;
+			}
+
+			// Truy vấn cơ sở dữ liệu để lấy toàn bộ danh sách truyện
+			var dsbotruyen = await _db.BoTruyens.AsNoTracking()
+								.OrderByDescending(x => x.Dateupdate)
+								.ToListAsync();
+
+			var result = new List<botruyenView>();
+
+			foreach (var a in dsbotruyen)
+			{
+				RatingManga? rating = await _db.RatingMangas.FromSqlRaw("select * from RatingManga where Mangaid = @p0", a.MangaId).FirstOrDefaultAsync();
+				var map1 = _mapper.Map<BotruyenProfile>(a);
+				map1.requesturl = requestUrl;
+				map1.routecontroller = routeController;
+				var mapmanga = _mapper.Map<botruyenView>(map1);
+				mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
+				List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == a.MangaId).OrderByDescending(y => y.ChapterDate)
+					.Take(3).ToListAsync();
+				var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
+				var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbydate).FirstOrDefaultAsync();
+				var mapchapter = _mapper.Map<List<chapterView2>>(listChapter);
+				mapmanga.ListChaper = mapchapter;
+				mapmanga.Listcategory = listCategory;
+				mapmanga.View = mangaview.ToString();
+				result.Add(mapmanga);
+			}
+
+			return result;
+		}
+		//Gọi danh sác truyện theo page với 3 tham số currentUrl, route, page
+		public async Task<IEnumerable<botruyenView>> LayDanhSachTruyenTheoPage(int? page, string requestUrl,string routeController)
         {
             //bộ nhớ cục bộ
             if (_memoryCache.TryGetValue("ListManga", out List<botruyenView> listdata))
@@ -129,9 +166,47 @@ namespace TestWebApi_v1.Repositories
                 return result;
             }
         }
-        //tạo cache
-        //Test thôi
-        public void YourMethod(List<botruyenView> data)
+		//Lấy truyện theo UserId
+		public async Task<IEnumerable<botruyenView>> LayTatCaTruyenTheoUserId(string userId, string requestUrl, string routeController)
+		{
+			// Sử dụng bộ nhớ cục bộ để caching
+			if (_memoryCache.TryGetValue("ListManga", out List<botruyenView> cachedList))
+			{
+				return cachedList;
+			}
+
+			var dsbotruyen = await _db.BoTruyens
+									.AsNoTracking()
+									.Where(b => b.Id == userId) // Lọc theo UserId
+									.OrderByDescending(x => x.Dateupdate)
+									.ToListAsync();
+
+			var result = new List<botruyenView>();
+
+			foreach (var a in dsbotruyen)
+			{
+				RatingManga? rating = await _db.RatingMangas.FromSqlRaw("select * from RatingManga where Mangaid = @p0", a.MangaId).FirstOrDefaultAsync();
+				var map1 = _mapper.Map<BotruyenProfile>(a);
+				map1.requesturl = requestUrl;
+				map1.routecontroller = routeController;
+				var mapmanga = _mapper.Map<botruyenView>(map1);
+				mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
+				List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == a.MangaId).OrderByDescending(y => y.ChapterDate)
+					.Take(3).ToListAsync();
+				var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
+				var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbydate).FirstOrDefaultAsync();
+				var mapchapter = _mapper.Map<List<chapterView2>>(listChapter);
+				mapmanga.ListChaper = mapchapter;
+				mapmanga.Listcategory = listCategory;
+				mapmanga.View = mangaview.ToString();
+				result.Add(mapmanga);
+			}
+
+			return result;
+		}
+		//tạo cache
+		//Test thôi
+		public void YourMethod(List<botruyenView> data)
         {
             // Lưu trữ dữ liệu vào cache
             _memoryCache.Set("Datacache", data, new MemoryCacheEntryOptions
@@ -181,117 +256,198 @@ namespace TestWebApi_v1.Repositories
             }
             return null;
         }
-        //Tạo bộ truyện
-        public async Task<bool> TaoTruyen(string idUser, string Manga, IFormFile? MangaImage)
-        {
-            var mangaid = Guid.NewGuid().ToString().Substring(0, 6);
-            var user = await _userManager.FindByIdAsync(idUser);
-            var MangaData = JsonConvert.DeserializeObject<botruyenView>(Manga);
-            if (MangaData != null)
-            {
-                BoTruyen a = new BoTruyen
-                {
-                    MangaId = mangaid,
-                    MangaName = MangaData.MangaName!,
-                    MangaDetails = MangaData.MangaDetails,
-                    MangaImage = (MangaImage != null) ? MangaImage.FileName : null,
-                    MangaAlternateName = MangaData.MangaAlternateName,
-                    MangaAuthor = MangaData.MangaAuthor!,
-                    MangaArtist = MangaData.MangaArtist,
-                    Type = MangaData.Type!,
-                    Id=user.Id
-                };
-                string d = "Manga";
-                string FolderPath = _sv.OnGetFolderPath(d);
-                string mangaImagePath = Path.Combine(FolderPath, "Content");
-                if (_sv.CreateFolder(mangaid, FolderPath) == true)
-                {
-                    if (MangaImage != null) await _sv.UpLoadimage(MangaImage, mangaImagePath);
-                    user.BoTruyens.Add(a);
-                    //_db.BoTruyens.Add(a);
-                    await _db.SaveChangesAsync();
-                    return true;
-                }
-            }
-            return false;
-        }
-        //Sửa thông tin của bộ truyện
-        public async Task<bool> SuaTruyen(string Id,string Manga, IFormFile? MangaImage)
-        {
-            using( var transaction= _db.Database.BeginTransaction())
-            {
-                try
-                {
-                    var result = JsonConvert.DeserializeObject<EditManga>(Manga);
-                    var truyen = _db.BoTruyens.Find(result!.MangaId);
-                    if (truyen != null && truyen!.Id!.Equals(Id))
-                    {
-                        string d = "Manga";
-                        string FolderPath = _sv.OnGetFolderPath(d);
-                        string mangaImagePath = Path.Combine(FolderPath, "Content");
+		//Lấy tên truyện
+		public async Task<IEnumerable<string>> LayDanhSachTenTruyen()
+		{
+			// Lấy tất cả bản ghi từ bảng BoTruyens mà không cần phân trang
+			var dsbotruyen = await _db.BoTruyens.AsNoTracking().ToListAsync();
 
-                        string? a = truyen.MangaImage;
-                        truyen.MangaId = result.MangaId;
-                        truyen.MangaName = result.MangaName ?? truyen.MangaName;
-                        truyen.MangaDetails = result.MangaDetails ?? truyen.MangaDetails;
-                        truyen.MangaImage = (MangaImage != null) ? MangaImage.FileName : truyen.MangaImage;
-                        truyen.MangaAlternateName = result.MangaAlternateName ?? truyen.MangaAlternateName;
-                        truyen.MangaAuthor = result.MangaAuthor ?? truyen.MangaAuthor;
-                        truyen.MangaArtist = result.MangaArtist ?? truyen.MangaArtist;
-                        truyen.Type = (result.Type != null) ? int.Parse(result.Type) : truyen.Type;
-                        await _db.SaveChangesAsync();
-                        if (MangaImage != null)
-                        {
-                            if (a != null) _sv.DeleteImage(mangaImagePath + "\\" + a);
-                            await _sv.UpLoadimage(MangaImage, mangaImagePath);
-                        }
-                        transaction.Commit();
-                        return true;
-                    }
-                    else
-                    {
-                        transaction.Rollback();
-                        return false;
-                    }
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-            
-        }
-        //Xóa bộ truyện
-        public async Task<bool> XoaTruyen(string iduUser, string MangaId)
-        {
-            var user = await _userManager.FindByIdAsync(iduUser);
-            var truyen =await _db.BoTruyens.FindAsync(MangaId);
-            if (truyen != null)
-            {
-                string mangaFile = Path.Combine(_sv.OnGetFolderPath(data), truyen.MangaId);
-                if (mangaFile != null) _sv.DeleteFolder(mangaFile);
+			// Tạo và trả về danh sách chứa chỉ tên truyện
+			var danhSachTenTruyen = dsbotruyen.Select(a => a.MangaName).ToList();
 
-                var chuongTruyens = _db.ChuongTruyens.Where(x => x.MangaId == truyen.MangaId).ToList();
-                foreach (var chuong in chuongTruyens)
-                {
-                    var image = _db.ChapterImages.Where(x => x.ChapterId == chuong.ChapterId);
-                    _db.ChapterImages.RemoveRange(image);
-                }
-                _db.ChuongTruyens.RemoveRange(chuongTruyens);
-                user.BoTruyens.Remove(truyen);
-                _db.BoTruyens.Remove(truyen);
-                string mangaImagePath = Path.Combine(_sv.OnGetFolderPath(data), "Content");
-                _sv.DeleteImage(mangaImagePath + "\\" + truyen.MangaImage);
-                await _db.SaveChangesAsync(); /*không thể dùng await _db.savechange() ở đây vì sẽ xung đột với{UserModel
+			return danhSachTenTruyen;
+		}
+		//Tạo bộ truyện
+		public async Task<bool> TaoTruyen(string idUser, AddeditView mangaDto, IFormFile? MangaImage)
+		{
+			var user = await _userManager.FindByIdAsync(idUser);
+			if (mangaDto != null)
+			{
+				var random = new Random();
+				var mangaid = "";
+				for (int i = 0; i < 6; i++)
+				{
+					mangaid += random.Next(10).ToString(); // Tạo số ngẫu nhiên từ 0 đến 9 và thêm vào chuỗi mangaid
+				}
+				BoTruyen manga = new BoTruyen
+				{
+					MangaId = mangaid,
+					MangaName = mangaDto.MangaName,
+					MangaDetails = mangaDto.MangaDetails,
+					MangaImage = MangaImage != null ? MangaImage.FileName : null,
+					MangaAlternateName = mangaDto.MangaAlternateName,
+					MangaAuthor = mangaDto.MangaAuthor,
+					MangaArtist = mangaDto.MangaArtist,
+					Type = mangaDto.Type,
+					Id = user.Id,
+					Dateupdate = DateTime.Now,
+					Status = true,
+
+				};
+				if (mangaDto.GenreIds != null)
+				{
+					foreach (var genreId in mangaDto.GenreIds)
+					{
+						var genre = await _db.TheLoais.FindAsync(genreId); // Tìm kiếm TheLoai dựa trên GenreId
+						if (genre != null)
+						{
+							manga.Genres.Add(genre); // Thêm TheLoai vào BoTruyen
+						}
+					}
+				}
+				string d = "Manga";
+				string FolderPath = _sv.OnGetFolderPath(d);
+				string mangaImagePath = Path.Combine(FolderPath, "Content");
+				if (_sv.CreateFolder(mangaid, FolderPath) == true)
+				{
+					if (MangaImage != null) await _sv.UpLoadimage(MangaImage, mangaImagePath);
+					user.BoTruyens.Add(manga);
+					//_db.BoTruyens.Add(manga);
+					await _db.SaveChangesAsync();
+					return true;
+				}
+			}
+			return false;
+		}
+		//Sửa bộ truyện
+		public async Task<bool> SuaTruyen(string idUser, AddeditView mangaDto, IFormFile? MangaImage)
+		{
+			using (var transaction = _db.Database.BeginTransaction())
+			{
+				try
+				{
+					var truyen = await _db.BoTruyens.Include(bt => bt.Genres).FirstOrDefaultAsync(bt => bt.MangaId == mangaDto.MangaId);
+					if (truyen != null && truyen.Id.Equals(idUser))
+					{
+						string d = "Manga";
+						string FolderPath = _sv.OnGetFolderPath(d);
+						string mangaImagePath = Path.Combine(FolderPath, "Content");
+
+						// Cập nhật thông tin truyện
+						truyen.MangaName = mangaDto.MangaName ?? truyen.MangaName;
+						truyen.MangaDetails = mangaDto.MangaDetails ?? truyen.MangaDetails;
+						truyen.MangaImage = (MangaImage != null) ? MangaImage.FileName : truyen.MangaImage;
+						truyen.MangaAlternateName = mangaDto.MangaAlternateName ?? truyen.MangaAlternateName;
+						truyen.MangaAuthor = mangaDto.MangaAuthor ?? truyen.MangaAuthor;
+						truyen.MangaArtist = mangaDto.MangaArtist ?? truyen.MangaArtist;
+						truyen.Type = mangaDto.Type ?? truyen.Type;
+						truyen.Dateupdate = DateTime.Now;
+
+						// Cập nhật GenreIds
+						truyen.Genres.Clear(); // Xóa các liên kết hiện tại
+						foreach (var genreId in mangaDto.GenreIds)
+						{
+							var genre = await _db.TheLoais.FindAsync(genreId);
+							if (genre != null)
+							{
+								truyen.Genres.Add(genre); // Thêm liên kết mới
+							}
+						}
+
+						await _db.SaveChangesAsync();
+
+						if (MangaImage != null)
+						{
+							await _sv.UpLoadimage(MangaImage, mangaImagePath);
+						}
+						transaction.Commit();
+						return true;
+					}
+					else
+					{
+						transaction.Rollback();
+						return false;
+					}
+				}
+				catch (Exception)
+				{
+					transaction.Rollback();
+					return false;
+				}
+			}
+		}
+		//Sửa trạng thái (Status)
+		public async Task<bool> UpdateStatusAsync(string mangaId, string idUser)
+		{
+			using (var transaction = _db.Database.BeginTransaction())
+			{
+				try
+				{
+					var boTruyen = await _db.BoTruyens.FirstOrDefaultAsync(bt => bt.MangaId == mangaId);
+
+					if (boTruyen != null && boTruyen.Id.Equals(idUser))
+					{
+						boTruyen.Status = !boTruyen.Status; // Đảo ngược trạng thái hiện tại
+						await _db.SaveChangesAsync();
+						transaction.Commit();
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+				catch (Exception)
+				{
+					transaction.Rollback();
+					return false;
+				}
+			}
+
+		}
+		//Xóa bộ truyện
+		public async Task<bool> XoaTruyen(string iduUser, string MangaId)
+		{
+			var user = await _userManager.FindByIdAsync(iduUser);
+			var truyen = await _db.BoTruyens.Include(bt => bt.Genres).FirstOrDefaultAsync(bt => bt.MangaId == MangaId);
+			if (truyen != null)
+			{
+				// Xóa liên kết từ các TheLoai
+				foreach (var theLoai in truyen.Genres.ToList())
+				{
+					theLoai.Mangas.Remove(truyen);
+				}
+
+				// Tiếp tục xử lý xóa các chương truyện và ảnh liên quan
+				string mangaFile = Path.Combine(_sv.OnGetFolderPath(data), truyen.MangaId);
+				if (mangaFile != null) _sv.DeleteFolder(mangaFile);
+
+				var chuongTruyens = _db.ChuongTruyens.Where(x => x.MangaId == truyen.MangaId).ToList();
+				foreach (var chuong in chuongTruyens)
+				{
+					var image = _db.ChapterImages.Where(x => x.ChapterId == chuong.ChapterId);
+					_db.ChapterImages.RemoveRange(image);
+				}
+				_db.ChuongTruyens.RemoveRange(chuongTruyens);
+
+				// Xóa BoTruyen
+				user.BoTruyens.Remove(truyen);
+				_db.BoTruyens.Remove(truyen);
+
+				string mangaImagePath = Path.Combine(_sv.OnGetFolderPath(data), "Content");
+				_sv.DeleteImage(mangaImagePath + "\\" + truyen.MangaImage);
+
+				await _db.SaveChangesAsync();/*không thể dùng await _db.savechange() ở đây vì sẽ xung đột với{UserModel
                                           => await _userManager.DeleteAsync(user)}; section này chưa kết thúc section khác đã tạo*/
-                return true;
-            }
-            else {
-                return false; 
-            }
-        }
-        //Lấy truyện mới cập nhật
-        public async Task<List<botruyenView>> getMangaNewUpdate(string requestUrl, string routeController)
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		//Lấy truyện mới cập nhật
+		public async Task<List<botruyenView>> getMangaNewUpdate(string requestUrl, string routeController)
         {
             using( var _context= _db)
             {
@@ -487,172 +643,207 @@ namespace TestWebApi_v1.Repositories
         {
             return await _db.BoTruyens.CountAsync();
         }
+		//Lấy số lượng truyện tranh được đăng tải mỗi ngày
+		public async Task<Dictionary<DateTime, int>> GetDailyPublishedStoryCountAsync()
+		{
+			return await _db.BoTruyens
+							.Where(bt => bt.Status == true && bt.Dateupdate != null)
+							.GroupBy(bt => bt.Dateupdate.Value.Date)
+							.Select(group => new { Date = group.Key, Count = group.Count() })
+							.ToDictionaryAsync(x => x.Date, x => x.Count);
+		}
 
-        //-----------------------------------------------End-Manga----------------------------------------------------//
-        //-------------------------------------------------Chapter-----------------------------------------------------//
+		//-----------------------------------------------End-Manga----------------------------------------------------//
+		//-------------------------------------------------Chapter-----------------------------------------------------//
 
-        //Lấy danh sách tất cả chương truyện
-        public async Task<IEnumerable<ChuongTruyen>> LayTatcaChuongTruyen()
+		//Lấy danh sách tất cả chương truyện
+		public async Task<IEnumerable<ChuongTruyen>> LayTatcaChuongTruyen()
         {
             var dschapter =await _db.ChuongTruyens.ToListAsync();
             return dschapter;
         }
-        //Tạo chương truyện của bộ truyện
-        public async Task<bool> TaoChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl)
-        {
-            var chuongTruyen = JsonConvert.DeserializeObject<ChuongTruyen>(Chapter);
-            string FolderPath = _sv.OnGetFolderPath(data);
-            string mangaPath = Path.Combine(FolderPath, chuongTruyen!.MangaId);
-            if (_sv.CreateFolder(chuongTruyen.ChapterId, mangaPath) == true)
-            {
-                _db.ChuongTruyens.Add(chuongTruyen);
-                if (MangaImage.Any() && MangaUrl.Any())
-                {
-                    foreach (var image in MangaImage)
-                    {
-                        string url = "";
-                        int i = 0;
-                        while (i < MangaUrl.Count)
-                        {
-                            url = MangaUrl[i];
-                            i++;
-                        }
-                        await _sv.UpLoadimage(image, mangaPath + "\\" + chuongTruyen.ChapterId);
-                        ChapterImage d = new ChapterImage
-                        {
-                            ImageName = image.FileName,
-                            ImageUl = "https" + url,
-                            ChapterId = chuongTruyen.ChapterId
-                        };
-                        chuongTruyen.ChapterImages.Add(d);
-                    }
-                }
-                else if (MangaImage.Any() && MangaUrl.Any() == false)
-                {
-                    foreach (var image in MangaImage)
-                    {
-                        await _sv.UpLoadimage(image, mangaPath + "\\" + chuongTruyen.ChapterId);
-                        ChapterImage d = new ChapterImage
-                        {
-                            ImageName = image.FileName,
-                            ImageUl = null,
-                            ChapterId = chuongTruyen.ChapterId
-                        };
-                        chuongTruyen.ChapterImages.Add(d);
-                    }
-                }
-                else if (MangaImage.Any() == false && MangaUrl.Any() == true)
-                {
-                    var a = "https";
-                    foreach (var url in MangaUrl)
-                    {
-                        ChapterImage d = new ChapterImage
-                        {
-                            ImageName = a + url,
-                            ImageUl = a + url,
-                            ChapterId = chuongTruyen.ChapterId
-                        };
-                        chuongTruyen.ChapterImages.Add(d);
-                    }
-                }
-                await _db.SaveChangesAsync();
-                return true;
-            }
-            return false;
-        }
-        //Sửa chương truyện của bộ truyện
-        public async Task<bool> SuaChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl)
-        {
-            var chuongTruyen = JsonConvert.DeserializeObject<ChuongTruyen>(Chapter);
-            string FolderPath = _sv.OnGetFolderPath(data);
-            string mangaPath = Path.Combine(FolderPath, chuongTruyen!.MangaId, chuongTruyen.ChapterId);
-            ChuongTruyen? x =await _db.ChuongTruyens.FindAsync(chuongTruyen.ChapterId);
-            if (x != null)
-            {
-                x.ChapterId = (chuongTruyen.ChapterId ?? x.ChapterId);
-                x.ChapterName = (chuongTruyen.ChapterName ?? x.ChapterId);
-                x.ChapterTitle = (chuongTruyen.ChapterTitle ?? x.ChapterId);
-                x.ChapterDate = x.ChapterDate;
-                x.MangaId = chuongTruyen.MangaId;
-                if (MangaImage.Any() && MangaUrl.Any())
-                {
-                    _sv.DeleteAllFilesInFolder(mangaPath);
-                    var d = _db.ChapterImages.Where(x => x.ChapterId == chuongTruyen.ChapterId).ToList();
-                    _db.ChapterImages.RemoveRange(d);
-                    foreach (var image in MangaImage)
-                    {
-                        string url = "";
-                        int i = 0;
-                        while (i < MangaUrl.Count)
-                        {
-                            url = MangaUrl[i];
-                            i++;
-                        }
-                        await _sv.UpLoadimage(image, mangaPath);
-                        ChapterImage h = new ChapterImage
-                        {
-                            ImageName = image.FileName,
-                            ImageUl = "https" + url,
-                            ChapterId = x.ChapterId
-                        };
-                        x.ChapterImages.Add(h);
-                    }
-                }
-                else if (MangaImage.Any() && MangaUrl.Any() == false)
-                {
-                    _sv.DeleteAllFilesInFolder(mangaPath);
-                    var d = _db.ChapterImages.Where(x => x.ChapterId == chuongTruyen.ChapterId).ToList();
-                    _db.ChapterImages.RemoveRange(d);
-                    foreach (var image in MangaImage)
-                    {
-                        await _sv.UpLoadimage(image, mangaPath);
-                        ChapterImage h = new ChapterImage
-                        {
-                            ImageName = image.FileName,
-                            ImageUl = null,
-                            ChapterId = x.ChapterId
-                        };
-                        x.ChapterImages.Add(h);
-                    }
-                }
-                else if (MangaImage.Any() == false && MangaUrl.Any() == true)
-                {
-                    var a = "https";
-                    var d = _db.ChapterImages.Where(x => x.ChapterId == chuongTruyen.ChapterId).ToList();
-                    _db.ChapterImages.RemoveRange(d);
-                    foreach (var url in MangaUrl)
-                    {
-                        ChapterImage h = new ChapterImage
-                        {
-                            ImageName = a + url,
-                            ImageUl = a + url,
-                            ChapterId = x.ChapterId
-                        };
-                        x.ChapterImages.Add(h);
-                    }
-                }
-                await _db.SaveChangesAsync();
-                return true;
-            }
-            return false;
-        }
-        //Xóa chương truyện
-        public async Task<bool> XoaChuongTruyen(string MangaId, string ChapterId)
-        {
-            var chuongtruyen = _db.ChuongTruyens.Find(ChapterId);
-            if (chuongtruyen != null)
-            {
-                string mangaFile = Path.Combine(_sv.OnGetFolderPath(data), MangaId, ChapterId);
-                if (mangaFile != null) _sv.DeleteFolder(mangaFile);
-                _db.ChapterImages.RemoveRange(_db.ChapterImages.Where(x => x.ChapterId == chuongtruyen.ChapterId));
-                _db.ChuongTruyens.Remove(chuongtruyen);
-                await _db.SaveChangesAsync();
-                return true;
-            }
-            return false;
-        }
-        //Lấy danh sách chương truyện của một bộ truyện cụ thể
-        public async Task<IEnumerable<chapterView2>> DanhSachChuongCuaBoTruyen(string idManga, string requestUrl, string routeController)
+		//Tạo chương truyện của bộ truyện
+		public async Task<bool> TaoChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl)
+		{
+			var chuongTruyen = JsonConvert.DeserializeObject<ChuongTruyen>(Chapter);
+			var random = new Random();
+			var randomNumber = "";
+			for (int i = 0; i < 6; i++)
+			{
+				randomNumber += random.Next(10).ToString();
+			}
+			chuongTruyen.ChapterId = "c" + randomNumber; // Gán ChapterId
+			string FolderPath = _sv.OnGetFolderPath(data);
+			string mangaPath = Path.Combine(FolderPath, chuongTruyen!.MangaId);
+			if (_sv.CreateFolder(chuongTruyen.ChapterId, mangaPath) == true)
+			{
+				_db.ChuongTruyens.Add(chuongTruyen);
+				if (MangaImage.Any() && MangaUrl.Any())
+				{
+					foreach (var image in MangaImage)
+					{
+						string url = "";
+						int i = 0;
+						while (i < MangaUrl.Count)
+						{
+							url = MangaUrl[i];
+							i++;
+						}
+						await _sv.UpLoadimage(image, mangaPath + "\\" + chuongTruyen.ChapterId);
+						ChapterImage d = new ChapterImage
+						{
+							ImageName = image.FileName,
+							ImageUl = "https" + url,
+							ChapterId = chuongTruyen.ChapterId
+						};
+						chuongTruyen.ChapterImages.Add(d);
+					}
+				}
+				else if (MangaImage.Any() && MangaUrl.Any() == false)
+				{
+					foreach (var image in MangaImage)
+					{
+						await _sv.UpLoadimage(image, mangaPath + "\\" + chuongTruyen.ChapterId);
+						ChapterImage d = new ChapterImage
+						{
+							ImageName = image.FileName,
+							ImageUl = null,
+							ChapterId = chuongTruyen.ChapterId
+						};
+						chuongTruyen.ChapterImages.Add(d);
+					}
+				}
+				else if (MangaImage.Any() == false && MangaUrl.Any() == true)
+				{
+					var a = "https";
+					foreach (var url in MangaUrl)
+					{
+						ChapterImage d = new ChapterImage
+						{
+							ImageName = a + url,
+							ImageUl = a + url,
+							ChapterId = chuongTruyen.ChapterId
+						};
+						chuongTruyen.ChapterImages.Add(d);
+					}
+				}
+				await _db.SaveChangesAsync();
+				return true;
+			}
+			return false;
+		}
+		//Sửa chương truyện của bộ truyện
+		public async Task<bool> SuaChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl)
+		{
+			var chuongTruyen = JsonConvert.DeserializeObject<ChuongTruyen>(Chapter);
+			string FolderPath = _sv.OnGetFolderPath(data);
+			string mangaPath = Path.Combine(FolderPath, chuongTruyen!.MangaId, chuongTruyen.ChapterId);
+			ChuongTruyen? x = await _db.ChuongTruyens.FindAsync(chuongTruyen.ChapterId);
+			if (x != null)
+			{
+				x.ChapterId = (chuongTruyen.ChapterId ?? x.ChapterId);
+				x.ChapterName = (chuongTruyen.ChapterName ?? x.ChapterId);
+				x.ChapterTitle = (chuongTruyen.ChapterTitle ?? x.ChapterId);
+				x.ChapterDate = x.ChapterDate;
+				x.MangaId = chuongTruyen.MangaId;
+				if (MangaImage.Any() && MangaUrl.Any())
+				{
+					_sv.DeleteAllFilesInFolder(mangaPath);
+					var d = _db.ChapterImages.Where(x => x.ChapterId == chuongTruyen.ChapterId).ToList();
+					_db.ChapterImages.RemoveRange(d);
+					foreach (var image in MangaImage)
+					{
+						string url = "";
+						int i = 0;
+						while (i < MangaUrl.Count)
+						{
+							url = MangaUrl[i];
+							i++;
+						}
+						await _sv.UpLoadimage(image, mangaPath);
+						ChapterImage h = new ChapterImage
+						{
+							ImageName = image.FileName,
+							ImageUl = "https" + url,
+							ChapterId = x.ChapterId
+						};
+						x.ChapterImages.Add(h);
+					}
+				}
+				else if (MangaImage.Any() && MangaUrl.Any() == false)
+				{
+					_sv.DeleteAllFilesInFolder(mangaPath);
+					var d = _db.ChapterImages.Where(x => x.ChapterId == chuongTruyen.ChapterId).ToList();
+					_db.ChapterImages.RemoveRange(d);
+					foreach (var image in MangaImage)
+					{
+						await _sv.UpLoadimage(image, mangaPath);
+						ChapterImage h = new ChapterImage
+						{
+							ImageName = image.FileName,
+							ImageUl = null,
+							ChapterId = x.ChapterId
+						};
+						x.ChapterImages.Add(h);
+					}
+				}
+				else if (MangaImage.Any() == false && MangaUrl.Any() == true)
+				{
+					var a = "https";
+					var d = _db.ChapterImages.Where(x => x.ChapterId == chuongTruyen.ChapterId).ToList();
+					_db.ChapterImages.RemoveRange(d);
+					foreach (var url in MangaUrl)
+					{
+						ChapterImage h = new ChapterImage
+						{
+							ImageName = a + url,
+							ImageUl = a + url,
+							ChapterId = x.ChapterId
+						};
+						x.ChapterImages.Add(h);
+					}
+				}
+				await _db.SaveChangesAsync();
+				return true;
+			}
+			return false;
+		}
+		//Xóa chương truyện
+		public async Task<bool> XoaChuongTruyen(string MangaId, string ChapterId)
+		{
+			var chuongtruyen = await _db.ChuongTruyens
+							   .Include(ct => ct.ChapterImages)
+							   .FirstOrDefaultAsync(ct => ct.ChapterId == ChapterId && ct.MangaId == MangaId);
+			if (chuongtruyen != null)
+			{
+				using (var transaction = _db.Database.BeginTransaction())
+				{
+					try
+					{
+						string mangaFile = Path.Combine(_sv.OnGetFolderPath(data), MangaId, ChapterId);
+						if (mangaFile != null) _sv.DeleteFolder(mangaFile);
+
+						_db.ChapterImages.RemoveRange(chuongtruyen.ChapterImages);
+						_db.ChuongTruyens.Remove(chuongtruyen);
+
+						await _db.SaveChangesAsync();
+						await transaction.CommitAsync();
+
+						return true;
+					}
+					catch (Exception ex)
+					{
+						await transaction.RollbackAsync();
+						// Xử lý lỗi hoặc ghi log tại đây
+						return false;
+					}
+				}
+			}
+
+			return false;
+		}
+		//Lấy danh sách chương truyện của một bộ truyện cụ thể
+		public async Task<IEnumerable<chapterView2>> DanhSachChuongCuaBoTruyen(string idManga, string requestUrl, string routeController)
         {
             var dschuong =await _db.ChuongTruyens.Where(x => x.MangaId == idManga).ToListAsync();
             var a = new List<chapterView2>();
@@ -718,8 +909,85 @@ namespace TestWebApi_v1.Repositories
                 return map;
             }
         }
-        //Lấy danh sách truyện theo thể loại truyện
-        public async Task<ResultForMangaView> getMangaByCategory(string id,string pagenumber, string pagesize, string requestUrl)
+		//Thêm thể loại
+		public async Task<bool> AddTheLoai(CategoryAddedit categoryAddedit)
+		{
+			try
+			{
+
+				// Tìm giá trị GenreId lớn nhất hiện tại và tăng nó lên 1
+				//int newGenreId = _db.TheLoais.Any() ? _db.TheLoais.Max(tl => tl.GenreId) + 1 : 1;
+
+				var theLoai = new TheLoai
+				{
+					// Giả sử GenreId được tạo tự động hoặc không cần thiết
+					//GenreId = newGenreId,
+					GenresIdName = categoryAddedit.GenresIdName,
+					Info = categoryAddedit.Info
+				};
+
+				_db.TheLoais.Add(theLoai);
+				await _db.SaveChangesAsync();
+				return true;
+			}
+			catch
+			{
+				// Trả về false nếu có lỗi xảy ra khi thêm dữ liệu vào cơ sở dữ liệu
+				return false;
+			}
+		}
+
+		//Xóa thể loại
+		public async Task<bool> DeleteTheLoai(int genreId)
+		{
+			var theLoai = await _db.TheLoais
+										.Include(tl => tl.Mangas)
+										.FirstOrDefaultAsync(tl => tl.GenreId == genreId);
+
+			if (theLoai == null)
+			{
+				// Không tìm thấy TheLoai
+				return false;
+			}
+
+			if (theLoai.Mangas.Any())
+			{
+				// Không thể xóa TheLoai vì có BoTruyen liên kết
+				return false;
+			}
+
+			_db.TheLoais.Remove(theLoai);
+			await _db.SaveChangesAsync();
+			return true;
+		}
+		//Sửa thể loại
+		public async Task<bool> UpdateTheLoai(int genreId, CategoryAddedit categoryAddedit)
+		{
+			try
+			{
+				var theLoai = await _db.TheLoais.FindAsync(genreId);
+				if (theLoai == null)
+				{
+					// Không tìm thấy TheLoai
+					return false;
+				}
+
+				// Cập nhật thông tin
+				theLoai.GenresIdName = categoryAddedit.GenresIdName;
+				theLoai.Info = categoryAddedit.Info;
+
+				_db.TheLoais.Update(theLoai);
+				await _db.SaveChangesAsync();
+				return true;
+			}
+			catch
+			{
+				// Trả về false nếu có lỗi xảy ra khi cập nhật dữ liệu vào cơ sở dữ liệu
+				return false;
+			}
+		}
+		//Lấy danh sách truyện theo thể loại truyện
+		public async Task<ResultForMangaView> getMangaByCategory(string id,string pagenumber, string pagesize, string requestUrl)
         {
             using (var _context = _db)
             {
@@ -897,17 +1165,24 @@ namespace TestWebApi_v1.Repositories
             map.ForEach(item => item.Typetop = "3");
             return map;
         }
-        //Tìm kiếm manga theo danh sách thể loại
-        //public async Task<botruyenView> FindByListCategory(List<string> categories)
-        //{
-        //    using( var _context= _db)
-        //    {
-        //        var result=await _context.BoTruyens.Where(x=> categories.All( y=> x.MangaGenre.Contains(y))).ToListAsync();
-        //        foreach(var item in result)
-        //        {
-        //            botruyenView
-        //        }
-        //    }
-        //}
-    }
+		//Tìm kiếm manga theo danh sách thể loại
+		//public async Task<botruyenView> FindByListCategory(List<string> categories)
+		//{
+		//    using( var _context= _db)
+		//    {
+		//        var result=await _context.BoTruyens.Where(x=> categories.All( y=> x.MangaGenre.Contains(y))).ToListAsync();
+		//        foreach(var item in result)
+		//        {
+		//            botruyenView
+		//        }
+		//    }
+		//}
+
+
+		//Lấy tất cả TypeManga
+		public IEnumerable<TypeManga> GetAllTypeMangas()
+		{
+			return _db.TypeMangas.ToList();
+		}
+	}
 }
