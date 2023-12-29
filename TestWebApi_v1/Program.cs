@@ -5,18 +5,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using TestWebApi_v1.Models;
-using TestWebApi_v1.Models.Account;
 using TestWebApi_v1.Models.DbContext;
-using TestWebApi_v1.Repositories;
-using TestWebApi_v1.Service.Phone;
-using AutoMapper;
 using TestWebApi_v1.Service.Hubs;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using System.Text.Json.Serialization;
 using TestWebApi_v1.Service.MailService.Models;
-using TestWebApi_v1.Service.MailService.Service;
+using TestWebApi_v1.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -52,34 +44,6 @@ builder.Services.AddSwaggerGen(option => {
     });
 
 });
-//Khai báo các lớp và inteface đã tạo
-//Database
-builder.Services.AddScoped<WebTruyenTranh_v2Context>();
-//truyen tranh
-builder.Services.AddScoped<IMangaModel,MangaModel>();
-//truyen tanh va nguoi dung
-builder.Services.AddScoped<IUserModel, UserModel>();
-//Check token
-builder.Services.AddScoped<ICheckToken, CheckToken>();
-//UserManga
-builder.Services.AddScoped<IUser_Manga_Model, User_Manga_Model>();
-//-- những dịch vụ service như sendmail hay mapper thì chỉ cần tạo một lần và dùng suốt vòng đời của ứng dụng nen dùng singleton
-//-- còn những dịch vụ yêu cầu http sẽ được khởi tạo độc lập với nhau
-//send email
-builder.Services.AddSingleton<IEmailService, EmailService>();
-//sms phone
-builder.Services.AddSingleton<SmsService>();
-//Services
-builder.Services.AddSingleton<IServices, Services>();
-//SignalR
-builder.Services.AddSingleton<ChatRealTime>();
-
-//Thêm automapper
-//builder.Services.AddAutoMapper(typeof(Program));
-builder.Services.AddSingleton(provider => new MapperConfiguration(cfg =>
-{
-    cfg.AddProfile(new TestWebApi_v1.Models.ViewModel.Mapper(provider.GetService<IServices>()!));
-}).CreateMapper());
 
 //Dbcontext
 builder.Services.AddDbContext<WebTruyenTranh_v2Context>(options =>
@@ -182,22 +146,8 @@ builder.Services.AddCors(options =>
 });
 //Add SignalR
 builder.Services.AddSignalR();
-//khai signalR để dùng trong controller
-builder.Services.AddScoped<ThongBaoNguoiDung>();
-//Khai CustomIUserIdProvider để thay đổi userid mặc định
-builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
-
-
-//Add auto cache {mybackgroundService}
-builder.Services.AddHostedService<MyBackgroundService>();
-builder.Services.AddHostedService<MyBackgroundService2>();
-//add Redis để làm cache thay thế cho bộ nhớ cache cục bộ {tăng hiệu năng}
-//chưa thể sử dụng vì cần có máy chủ redis {https://azure.microsoft.com/en-us/products/cache/}
-//builder.Services.AddStackExchangeRedisCache(options =>
-//{
-//    options.Configuration = builder.Configuration.GetConnectionString("Redis"); // Địa chỉ và cổng của Redis Server
-//    options.InstanceName = "Yahallo"; // Tên instance (tên của ứng dụng hoặc dự án)
-//});
+//DependencyInjection
+builder.Services.ConfigureDI();
 //bộ nhớ đệm phân táng
 builder.Services.AddDistributedMemoryCache();
 
@@ -223,5 +173,5 @@ app.UseAuthorization();
 //dùng session
 app.UseSession();
 app.MapControllers();
-app.MapHub<ChatRealTime>("/Notification");
+app.MapHub<ChatRealTimeService>("/Notification");
 app.Run();

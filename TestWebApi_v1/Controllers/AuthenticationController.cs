@@ -16,6 +16,7 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using TestWebApi_v1.Service.MailService.Service;
 using TestWebApi_v1.Service.MailService.Models;
+using TestWebApi_v1.Service.Respone;
 
 namespace TestWebApi_v1.Controllers
 {
@@ -24,19 +25,19 @@ namespace TestWebApi_v1.Controllers
     public class AuthenticationController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
-        private readonly RoleManager<Role> _roleManager;
+        private readonly RoleManager<Models.DbContext.Role> _roleManager;
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IUserModel _userModel;
+        private readonly IUserRepo _userModel;
         private readonly SmsService _smsService;
         private readonly IMapper _mapper;
-        private readonly IServices _sv;
+        private readonly IServiceRepo _sv;
 
-        public AuthenticationController(UserManager<User> userManager, RoleManager<Role> roleManager, IUserModel userModel,
+        public AuthenticationController(UserManager<User> userManager, RoleManager<Models.DbContext.Role> roleManager, IUserRepo userModel,
             IConfiguration configuration, IEmailService emailService, SignInManager<User> signInManager, IHttpContextAccessor httpContextAccessor,
-            SmsService smsService,IMapper mapper, IServices sv)
+            SmsService smsService,IMapper mapper, IServiceRepo sv)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -71,25 +72,25 @@ namespace TestWebApi_v1.Controllers
                 return PhysicalFile(result, "image/jpeg");
             }
             return StatusCode(StatusCodes.Status404NotFound,
-                              new Respone { Status = "Failed", Message = $"Not Found" });
+                              new ResponeStatus { Status = "Failed", Message = $"Not Found" });
         }
         //Lấy danh sách user
         [HttpGet]
         [Route("ListUser")]
-        public async Task<IEnumerable<UserViewModel>> getListUser()
+        public async Task<IEnumerable<ResponeUser>> getListUser()
         {
             var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
             string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
             string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
             var user =await _userManager.Users.ToListAsync();
-            var UserView = _mapper.Map<List<UserViewModel>>(user);
+            var UserView = _mapper.Map<List<ResponeUser>>(user);
             foreach (var item in UserView)
             {
                 var url = $"Avatar/{item.Avatar}";
                 item.Avatar = _sv.LayUrlAnh(requestUrl, routeController, url) ?? null;
             }
             if (UserView == null)
-                return new List<UserViewModel>() { };
+                return new List<ResponeUser>() { };
             return UserView;
         }
         //Xác thực email 
@@ -105,11 +106,11 @@ namespace TestWebApi_v1.Controllers
                 if (result.Succeeded)
                 {
                     return StatusCode(StatusCodes.Status200OK,
-                        new Respone { Status = "Success", Message = "Email Verified Successfully!" });
+                        new ResponeStatus { Status = "Success", Message = "Email Verified Successfully!" });
                 }
             }
             return StatusCode(StatusCodes.Status500InternalServerError,
-                        new Respone { Status = "Error", Message = "Email Doesn't Exist!" });
+                        new ResponeStatus { Status = "Error", Message = "Email Doesn't Exist!" });
         }
         //Trả về model với 2 tham số là token và email phục vụ cho hàm {ForgotPassword=> forgotPasswordLink}
         [HttpGet("Reset-password")]
@@ -133,10 +134,10 @@ namespace TestWebApi_v1.Controllers
                 var message = new Message(new string[] { result.email! }, "Confirm Email", confirmationLink!);
                 _emailService.SendEmail(message);
                 return StatusCode(StatusCodes.Status201Created,
-                new Respone { Status = "Success", Message = $"Tài khoản đã được tạo và email xác thực đã được gửi đến {result.email}!" });
+                new ResponeStatus { Status = "Success", Message = $"Tài khoản đã được tạo và email xác thực đã được gửi đến {result.email}!" });
             }
             return StatusCode(StatusCodes.Status400BadRequest,
-                new Respone { Status = "Failed", Message = result.Message });
+                new ResponeStatus { Status = "Failed", Message = result.Message });
         }
         //đăng nhập
         [HttpPost]
@@ -189,7 +190,7 @@ namespace TestWebApi_v1.Controllers
                 {
                     token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
                     expiration = jwtToken.ValidTo,
-                    userdata = _mapper.Map<UserViewModel>(user),
+                    userdata = _mapper.Map<ResponeUser>(user),
                 });
 
             }
@@ -226,7 +227,7 @@ namespace TestWebApi_v1.Controllers
 
             }
             return StatusCode(StatusCodes.Status404NotFound,
-                new Respone { Status = "Failed", Message = $"Invalid Code" });
+                new ResponeStatus { Status = "Failed", Message = $"Invalid Code" });
 
         }
         [HttpPost]
@@ -252,10 +253,10 @@ namespace TestWebApi_v1.Controllers
                 _emailService.SendEmail(message);
 
                 return StatusCode(StatusCodes.Status200OK,
-                    new Respone { Status = "Success", Message = $"Yêu cầu thay đổi mật khẩu đã được gửi tới email {user.Email}. Vui lòng kiểm tra email của bạn!." });
+                    new ResponeStatus { Status = "Success", Message = $"Yêu cầu thay đổi mật khẩu đã được gửi tới email {user.Email}. Vui lòng kiểm tra email của bạn!." });
             }
             return StatusCode(StatusCodes.Status400BadRequest,
-                    new Respone { Status = "Errr", Message = $"Không thể gửi yêu cầu đến email của bạn, vui lòng thử lại" });
+                    new ResponeStatus { Status = "Errr", Message = $"Không thể gửi yêu cầu đến email của bạn, vui lòng thử lại" });
         }
         [HttpPost]
         [AllowAnonymous]
@@ -276,10 +277,10 @@ namespace TestWebApi_v1.Controllers
                     return Ok(ModelState);
                 }
                 return StatusCode(StatusCodes.Status200OK,
-                    new Respone { Status = "Success", Message = $"Password Changed Request Is Sent On Email {user.Email}. Please Open Your Email & Changed New Password" });
+                    new ResponeStatus { Status = "Success", Message = $"Password Changed Request Is Sent On Email {user.Email}. Please Open Your Email & Changed New Password" });
             }
             return StatusCode(StatusCodes.Status400BadRequest,
-                    new Respone { Status = "Errr", Message = $"Couldn't send to email. Please truy again!" });
+                    new ResponeStatus { Status = "Errr", Message = $"Couldn't send to email. Please truy again!" });
         }
         //reset password
         //[HttpPost]
@@ -335,10 +336,10 @@ namespace TestWebApi_v1.Controllers
             if (result.Value == true)
             {
                 return StatusCode(StatusCodes.Status200OK,
-                    new Respone { Status = "Success", Message = result.Message });
+                    new ResponeStatus { Status = "Success", Message = result.Message });
             }
             return StatusCode(StatusCodes.Status400BadRequest,
-                    new Respone { Status = "Failed", Message = result.Message });
+                    new ResponeStatus { Status = "Failed", Message = result.Message });
         
         }
         [HttpPut]
@@ -357,10 +358,10 @@ namespace TestWebApi_v1.Controllers
             if (result.Succeeded)
             {
                 return StatusCode(StatusCodes.Status200OK,
-                   new Respone { Status = "Success", Message = "Change password Successfully!" });
+                   new ResponeStatus { Status = "Success", Message = "Change password Successfully!" });
             }
             return StatusCode(StatusCodes.Status400BadRequest,
-             new Respone { Status = "Failed", Message = "Change Phone Number failed!" });
+             new ResponeStatus { Status = "Failed", Message = "Change Phone Number failed!" });
         }
         //Xóa tải khoản 
         [HttpDelete("DeleteUser")]
@@ -370,10 +371,10 @@ namespace TestWebApi_v1.Controllers
             if (result.Value == true)
             {
                 return StatusCode(StatusCodes.Status200OK,
-                    new Respone { Status = "Success", Message = result.Message });
+                    new ResponeStatus { Status = "Success", Message = result.Message });
             }
             return StatusCode(StatusCodes.Status403Forbidden,
-                    new Respone { Status = "Failed", Message = result.Message });
+                    new ResponeStatus { Status = "Failed", Message = result.Message });
         }
 
 
@@ -385,10 +386,10 @@ namespace TestWebApi_v1.Controllers
             if (result.Value == true)
             {
                 return StatusCode(StatusCodes.Status200OK,
-                    new Respone { Status = "Success", Message = result.Message });
+                    new ResponeStatus { Status = "Success", Message = result.Message });
             }
             return StatusCode(StatusCodes.Status403Forbidden,
-                    new Respone { Status = "Failed", Message = result.Message });
+                    new ResponeStatus { Status = "Failed", Message = result.Message });
         }
         //Xóa role User
         [HttpDelete("DeleteRole")]
@@ -398,37 +399,37 @@ namespace TestWebApi_v1.Controllers
             if (result.Value == true)
             {
                 return StatusCode(StatusCodes.Status200OK,
-                    new Respone { Status = "Success", Message = result.Message });
+                    new ResponeStatus { Status = "Success", Message = result.Message });
             }
             return StatusCode(StatusCodes.Status403Forbidden,
-                    new Respone { Status = "Failed", Message = result.Message });
+                    new ResponeStatus { Status = "Failed", Message = result.Message });
         }
 
 
         //Lấy danh sách role
         [HttpGet]
         [Route("ListRole")]
-        public async Task<IEnumerable<RoleViewModel>> getlistRole()
+        public async Task<IEnumerable<ResponeView>> getlistRole()
         {
             var result =await _roleManager.Roles.ToListAsync();
-            var RoleView = _mapper.Map<List<RoleViewModel>>(result);
+            var RoleView = _mapper.Map<List<ResponeView>>(result);
             if (result == null)
-                return new List<RoleViewModel>() { };
+                return new List<ResponeView>() { };
             return RoleView;
         }
         //Tạo mới role
         [HttpPost]
         [Route("CreateNewRole")]
-        public async Task<IActionResult> CreateRoles(CreateRole role)
+        public async Task<IActionResult> CreateRoles(Models.Roles.RoleRequest role)
         {
             var result = await _userModel.TaoRoleMoi(role);
             if (result.Value == true)
             {
                 return StatusCode(StatusCodes.Status200OK,
-                    new Respone { Status = "Success", Message = result.Message });
+                    new ResponeStatus { Status = "Success", Message = result.Message });
             }
             return StatusCode(StatusCodes.Status403Forbidden,
-                    new Respone { Status = "Failed", Message = result.Message });
+                    new ResponeStatus { Status = "Failed", Message = result.Message });
         }
         //Sửa Role
         [HttpPut]
@@ -439,10 +440,10 @@ namespace TestWebApi_v1.Controllers
             if (result.Value == true)
             {
                 return StatusCode(StatusCodes.Status200OK, 
-                    new Respone{ Status = "Success", Message = result.Message });
+                    new ResponeStatus { Status = "Success", Message = result.Message });
             }
             return StatusCode(StatusCodes.Status403Forbidden,
-                    new Respone { Status = "Failed", Message = result.Message });
+                    new ResponeStatus { Status = "Failed", Message = result.Message });
         }
         //Xóa Role
         [HttpDelete]
@@ -453,10 +454,10 @@ namespace TestWebApi_v1.Controllers
             if (result.Value == true)
             {
                 return StatusCode(StatusCodes.Status200OK,
-                    new Respone { Status = "Success", Message = result.Message });
+                    new ResponeStatus { Status = "Success", Message = result.Message });
             }
             return StatusCode(StatusCodes.Status403Forbidden,
-                    new Respone { Status = "Failed", Message = result.Message });
+                    new ResponeStatus { Status = "Failed", Message = result.Message });
         }
         private string getCurrenthttpContext()
         {

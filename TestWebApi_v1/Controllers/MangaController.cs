@@ -12,6 +12,7 @@ using TestWebApi_v1.Models.ViewModel.MangaView;
 using TestWebApi_v1.Repositories;
 using TestWebApi_v1.Service;
 using TestWebApi_v1.Service.Hubs;
+using TestWebApi_v1.Service.Respone;
 
 namespace TestWebApi_v1.Controllers
 {
@@ -21,11 +22,11 @@ namespace TestWebApi_v1.Controllers
     {
         private readonly IMemoryCache _memoryCache;
         private ILogger<MangaController> _logger;
-        private readonly IMangaModel _mangaModel;
-        private readonly ThongBaoNguoiDung _tb2;
+        private readonly IMangaRepo _mangaModel;
+        private readonly RealTimeService _tb2;
         private readonly UserManager<User> _userManager;
-        public MangaController(IMangaModel mangaModel, ILogger<MangaController> logger,
-            IMemoryCache memorycache,UserManager<User> userManager,ThongBaoNguoiDung tb2)
+        public MangaController(IMangaRepo mangaModel, ILogger<MangaController> logger,
+            IMemoryCache memorycache,UserManager<User> userManager,RealTimeService tb2)
         {
             _mangaModel = mangaModel;
             _logger = logger;
@@ -49,7 +50,7 @@ namespace TestWebApi_v1.Controllers
             return await _mangaModel.search();
         }
         [HttpGet("MangaNewUpdate")]
-        public async Task<List<botruyenView>> getMangaUpdate() 
+        public async Task<List<ResponeManga>> getMangaUpdate() 
         {
             var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
             string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
@@ -136,15 +137,15 @@ namespace TestWebApi_v1.Controllers
                 var result = await _mangaModel.TaoTruyen(Id, Manga, MangaImage);
                 if(result) {
                     return StatusCode(StatusCodes.Status201Created,
-                     new Respone { Status = "Success", Message = $"đã tạo thành công"});
+                     new ResponeStatus { Status = "Success", Message = $"đã tạo thành công"});
                 }
                 return StatusCode(StatusCodes.Status417ExpectationFailed,
-                     new Respone { Status = "Failed", Message = $"Không thể tạo truyện" });
+                     new ResponeStatus { Status = "Failed", Message = $"Không thể tạo truyện" });
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status424FailedDependency,
-                     new Respone { Status = "Error", Message = $"Đã gặp lỗi trong quá trình thêm truyện" });
+                     new ResponeStatus { Status = "Error", Message = $"Đã gặp lỗi trong quá trình thêm truyện" });
             }
         }
 
@@ -161,15 +162,15 @@ namespace TestWebApi_v1.Controllers
                 if (result)
                 {
                     return StatusCode(StatusCodes.Status201Created,
-                     new Respone { Status = "Success", Message = $"Truyện đã được sửa thành công" });
+                     new ResponeStatus { Status = "Success", Message = $"Truyện đã được sửa thành công" });
                 }
                 return StatusCode(StatusCodes.Status417ExpectationFailed,
-                  new Respone { Status = "Failed", Message = $"Truyện sửa thất bại" });
+                  new ResponeStatus { Status = "Failed", Message = $"Truyện sửa thất bại" });
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status400BadRequest,
-                    new Respone { Status = "Error", Message = $"Đã gặp lỗi trong quá trình sửa" });
+                    new ResponeStatus { Status = "Error", Message = $"Đã gặp lỗi trong quá trình sửa" });
             }
         }
 
@@ -186,15 +187,15 @@ namespace TestWebApi_v1.Controllers
                 if (result)
                 {
                     return StatusCode(StatusCodes.Status200OK,
-                            new Respone { Status = "Success", Message = $"Xóa thành công" });
+                            new ResponeStatus { Status = "Success", Message = $"Xóa thành công" });
                 }
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Failed", Message = $"Xóa thất bại" });
+                            new ResponeStatus { Status = "Failed", Message = $"Xóa thất bại" });
             }
             catch(Exception)
             {
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Error", Message = $"Gặp lỗi trong quá trình xóa" });
+                            new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình xóa" });
             }
         }
 
@@ -213,7 +214,7 @@ namespace TestWebApi_v1.Controllers
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Error", Message = $"Gặp lỗi trong quá trình lấy dữ liệu" });
+                            new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình lấy dữ liệu" });
             }
         }
 
@@ -231,15 +232,15 @@ namespace TestWebApi_v1.Controllers
                 if (result)
                 {
                     return StatusCode(StatusCodes.Status200OK,
-                            new Respone { Status = "Success", Message = $"Thành công" });
+                            new ResponeStatus { Status = "Success", Message = $"Thành công" });
                 }
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Failed", Message = $"Thất bại" });
+                            new ResponeStatus { Status = "Failed", Message = $"Thất bại" });
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Error", Message = $"Đã xảy ra lỗi" });
+                            new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
             }
         }
 
@@ -255,15 +256,15 @@ namespace TestWebApi_v1.Controllers
                 if (result)
                 {
                     return StatusCode(StatusCodes.Status200OK,
-                            new Respone { Status = "Success", Message = $"Thành công" });
+                            new ResponeStatus { Status = "Success", Message = $"Thành công" });
                 }
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Failed", Message = $"Thất bại" });
+                            new ResponeStatus { Status = "Failed", Message = $"Thất bại" });
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Error", Message = $"Đã xảy ra lỗi" });
+                            new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
             }
         }
 
@@ -279,15 +280,15 @@ namespace TestWebApi_v1.Controllers
                 if (result)
                 {
                     return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Success", Message = $"Xóa thành công" });
+                            new ResponeStatus { Status = "Success", Message = $"Xóa thành công" });
                 }
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Failes", Message = $"Xóa thất bại" });
+                            new ResponeStatus { Status = "Failes", Message = $"Xóa thất bại" });
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Error", Message = $"Đã xảy ra lỗi" });
+                            new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
             }
         }
 
@@ -306,12 +307,12 @@ namespace TestWebApi_v1.Controllers
                     return Json(result);
                 }
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Failed", Message = $"Truy xuất thất bại" });
+                            new ResponeStatus { Status = "Failed", Message = $"Truy xuất thất bại" });
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status404NotFound,
-                            new Respone { Status = "Error", Message = $"Gặp lỗi trong quá trình lấy dữ liệu" });
+                            new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình lấy dữ liệu" });
             }
         }
 
@@ -329,12 +330,12 @@ namespace TestWebApi_v1.Controllers
                     return Json(result); 
                 }
                 return StatusCode(StatusCodes.Status404NotFound,
-                             new Respone { Status = "Failed", Message = $"Truy xuất thất bại" });
+                             new ResponeStatus { Status = "Failed", Message = $"Truy xuất thất bại" });
             }
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status404NotFound,
-                             new Respone { Status = "Error", Message = $"Gặp lỗi trong quá trình truy xuất" });
+                             new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình truy xuất" });
             }
         }
 
@@ -349,7 +350,7 @@ namespace TestWebApi_v1.Controllers
                 return PhysicalFile(result, "image/jpeg");
             }
             return StatusCode(StatusCodes.Status404NotFound,
-                              new Respone { Status = "Failed", Message = $"Not Found" });
+                              new ResponeStatus { Status = "Failed", Message = $"Not Found" });
         }
 
 
@@ -363,7 +364,7 @@ namespace TestWebApi_v1.Controllers
         }
         //lấy danh sách thể loại
         [HttpGet("Category/Getall")]
-        public async Task<List<CategoryView>> getCategories()
+        public async Task<List<ResponeCategory>> getCategories()
         {
             var result =await _mangaModel.getListCategory();
             return result;
@@ -376,7 +377,7 @@ namespace TestWebApi_v1.Controllers
         }
         //Lấy manga theo danh sách thể loại
         [HttpGet("GetMangaByListCategories")]
-        public async Task<List<botruyenView>> GetMangaByCategories([FromQuery] List<string> List)
+        public async Task<List<ResponeManga>> GetMangaByCategories([FromQuery] List<string> List)
         {
             var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
             string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
@@ -428,9 +429,9 @@ namespace TestWebApi_v1.Controllers
             return await _mangaModel.numbermanga();
         }
         [HttpGet("LayThuCache")]
-        public async Task<IEnumerable<botruyenView>> getdata( )
+        public async Task<IEnumerable<ResponeManga>> getdata( )
         {
-            if (_memoryCache.TryGetValue("cachedData", out List<botruyenView> cachedData))
+            if (_memoryCache.TryGetValue("cachedData", out List<ResponeManga> cachedData))
             {
                 Stopwatch t = new Stopwatch(); ;
                 t.Start();
