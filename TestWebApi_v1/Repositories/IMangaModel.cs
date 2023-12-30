@@ -52,6 +52,7 @@ namespace TestWebApi_v1.Repositories
         Task<List<CategoryView>> getListCategory();
         Task<bool> AddTheLoai(CategoryAddedit categoryAddedit);
         Task<bool> DeleteTheLoai(int genreId);
+        Task<bool> UpdateTheLoai(int genreId, CategoryAddedit categoryAddedit);
 		Task<ResultForMangaView> getMangaByCategory(string id,string pagenumber, string pagesize, string requestUrl);
         IEnumerable<TypeManga> GetAllTypeMangas();
 

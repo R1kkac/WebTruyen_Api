@@ -465,7 +465,7 @@ namespace TestWebApi_v1.Controllers
             return result;
         }
 		//Thêm thể loại
-		[Authorize(Roles = "Admin,Upload")]
+		[Authorize(Roles = "Admin")]
 		[EnableCors("Policy")]
 		[HttpPost("CreateGenre")]
 		public async Task<IActionResult> CreateGenre([FromBody] CategoryAddedit categoryAddedit)
@@ -482,7 +482,7 @@ namespace TestWebApi_v1.Controllers
 			}
 		}
 		//Xóa thể loại
-		[Authorize(Roles = "Admin,Upload")]
+		[Authorize(Roles = "Admin")]
 		[EnableCors("Policy")]
 		[HttpDelete("{GenreId}/DeleteGenre")]
 		public async Task<IActionResult> deleteGenre(int GenreId)
@@ -507,6 +507,33 @@ namespace TestWebApi_v1.Controllers
 						  new Respone { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
 			}
 		}
+		//Sửa thể loại
+		[Authorize(Roles = "Admin,Upload")]
+		[EnableCors("Policy")]
+		[HttpPut("{GenreId}/UpdateGenre")]
+		public async Task<IActionResult> UpdateGenre(int GenreId, [FromBody] CategoryAddedit categoryAddedit)
+		{
+			try
+			{
+				var result = await _mangaModel.UpdateTheLoai(GenreId, categoryAddedit);
+				if (result)
+				{
+					return Ok(new Respone { Status = "Success", Message = "Cập nhật thể loại thành công" });
+				}
+				else
+				{
+					// Phân biệt giữa không tìm thấy và lỗi khác
+					return BadRequest(new Respone { Status = "Bad Request", Message = "Không tìm thấy thể loại hoặc không thể cập nhật" });
+				}
+			}
+			catch (Exception ex)
+			{
+				// Trả về lỗi nội bộ của server
+				return StatusCode(StatusCodes.Status500InternalServerError,
+						  new Respone { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
+			}
+		}
+
 		//lấy danh sách trang
 		[HttpGet("GetPageNumber")]
         public async Task<int> getPageNumber()
@@ -602,6 +629,7 @@ namespace TestWebApi_v1.Controllers
 			var count = await _mangaModel.GetDailyPublishedStoryCountAsync();
 			return Ok(count);
 		}
+        //Lấy kiểu truyện
 		[HttpGet("GetAllType")]
 		public IActionResult GetAll()
 		{
