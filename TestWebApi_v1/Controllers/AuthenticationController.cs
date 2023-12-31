@@ -61,8 +61,27 @@ namespace TestWebApi_v1.Controllers
             }
             return null;
         }
-        //lấy avatar User
-        [HttpGet("Avatar/{image}")]
+		//Lấy role người dùng
+		[HttpGet("userroles/{userId}")]
+		public async Task<IActionResult> GetUserRoles(string userId)
+		{
+			try
+			{
+				var roles = await _userModel.GetUserRolesAsync(userId);
+				if (roles == null || !roles.Any())
+				{
+					return NotFound($"No roles found for user with ID {userId}.");
+				}
+				return Ok(roles);
+			}
+			catch (Exception ex)
+			{
+				// Log the exception details here
+				return StatusCode(500, $"Internal server error: {ex.Message}");
+			}
+		}
+		//lấy avatar User
+		[HttpGet("Avatar/{image}")]
         public IActionResult Avatar(string image)
         {
             var result = _sv.LayAvatarUser(image);
@@ -92,8 +111,39 @@ namespace TestWebApi_v1.Controllers
                 return new List<UserViewModel>() { };
             return UserView;
         }
-        //Xác thực email 
-        [HttpGet("ConfirmEmail")]
+		//Lấy danh sách user2
+		[HttpGet]
+		[Route("GetAllUser")]
+		public async Task<IEnumerable<UserInfo>> getAllUser()
+		{
+			var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
+			string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
+			string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+
+			var users = await _userManager.Users
+				.Include(u => u.UserRoles)
+				.ThenInclude(ur => ur.role) // Giả sử 'Role' là tên của entity quản lý vai trò
+				.ToListAsync();
+
+			var userInfoList = new List<UserInfo>();
+			foreach (var user in users)
+			{
+				var userInfo = _mapper.Map<UserInfo>(user); // Hoặc chuyển đổi thủ công nếu không sử dụng AutoMapper
+
+				// Lấy và gán vai trò từ UserRoles
+				userInfo.Role = user.UserRoles.Select(ur => ur.role.Name).ToList();
+
+				// Cập nhật URL ảnh đại diện
+				var url = $"Avatar/{userInfo.Avatar}";
+				userInfo.Avatar = _sv.LayUrlAnh(requestUrl, routeController, url) ?? null;
+
+				userInfoList.Add(userInfo);
+			}
+
+			return userInfoList;
+		}
+		//Xác thực email 
+		[HttpGet("ConfirmEmail")]
         public async Task<IActionResult> ConfirmEmail(string token, string email)
         {
             //tìm user

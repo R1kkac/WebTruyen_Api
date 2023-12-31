@@ -383,10 +383,22 @@ namespace TestWebApi_v1.Repositories
 			{
 				try
 				{
+					var user = await _userManager.FindByIdAsync(idUser);
 					var boTruyen = await _db.BoTruyens.FirstOrDefaultAsync(bt => bt.MangaId == mangaId);
+					var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
 
-					if (boTruyen != null && boTruyen.Id.Equals(idUser))
+					if (boTruyen != null && (isAdmin || boTruyen.Id.Equals(idUser)))
 					{
+						// Nếu truyện đang active (true) và sẽ được chuyển thành inactive (false)
+						if (boTruyen.Status.HasValue && boTruyen.Status.Value)
+						{
+							boTruyen.MarkedAsDeletedDate = DateTime.UtcNow; // Đánh dấu thời gian xóa
+						}
+						else
+						{
+							boTruyen.MarkedAsDeletedDate = null; // Khi truyện được kích hoạt lại
+						}
+
 						boTruyen.Status = !boTruyen.Status; // Đảo ngược trạng thái hiện tại
 						await _db.SaveChangesAsync();
 						transaction.Commit();
@@ -403,14 +415,14 @@ namespace TestWebApi_v1.Repositories
 					return false;
 				}
 			}
-
 		}
 		//Xóa bộ truyện
 		public async Task<bool> XoaTruyen(string iduUser, string MangaId)
 		{
 			var user = await _userManager.FindByIdAsync(iduUser);
 			var truyen = await _db.BoTruyens.Include(bt => bt.Genres).FirstOrDefaultAsync(bt => bt.MangaId == MangaId);
-			if (truyen != null)
+			var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+			if (truyen != null && (isAdmin || truyen.Id.Equals(iduUser)))
 			{
 				// Xóa liên kết từ các TheLoai
 				foreach (var theLoai in truyen.Genres.ToList())

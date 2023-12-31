@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Org.BouncyCastle.Asn1.Ocsp;
@@ -162,13 +163,28 @@ namespace TestWebApi_v1.Repositories
             }
             return null;
         }
-        /// <summary>
-        /// Lưu ý: muốn xóa tài khoản thì phải xóa botruyen trước nhưng bộ truyện còn có folder và image 
-        /// nên không thể xóa theo cách thông thường
-        /// </summary>
-        /// <param name="email">Email user cần xóa</param>
-        /// <returns>Trả về thành công hay thất bại</returns>
-        public async Task<ResultService> XoataiKhoan(string email)
+		//Lấy role User
+		public async Task<IEnumerable<RoleViewModel>> GetUserRolesAsync(string userId)
+		{
+			var userRoles = await _db.UserRoles
+				.Where(ur => ur.UserId == userId)
+				.Include(ur => ur.role)
+				.Select(ur => new RoleViewModel
+				{
+					Id = ur.RoleId,
+					Name = ur.role.Name
+				})
+				.ToListAsync();
+
+			return userRoles;
+		}
+		/// <summary>
+		/// Lưu ý: muốn xóa tài khoản thì phải xóa botruyen trước nhưng bộ truyện còn có folder và image 
+		/// nên không thể xóa theo cách thông thường
+		/// </summary>
+		/// <param name="email">Email user cần xóa</param>
+		/// <returns>Trả về thành công hay thất bại</returns>
+		public async Task<ResultService> XoataiKhoan(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
             var dsTruyen = user.BoTruyens.ToList();

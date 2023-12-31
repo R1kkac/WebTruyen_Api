@@ -503,7 +503,7 @@ namespace TestWebApi_v1.Controllers
 			}
 		}
 		//Sửa thể loại
-		[Authorize(Roles = "Admin,Upload")]
+		[Authorize(Roles = "Admin")]
 		[EnableCors("Policy")]
 		[HttpPut("{GenreId}/UpdateGenre")]
 		public async Task<IActionResult> UpdateGenre(int GenreId, [FromBody] CategoryAddedit categoryAddedit)
