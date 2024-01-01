@@ -9,7 +9,7 @@ namespace TestWebApi_v1.Repositories
         //Botruyen
         Task<IEnumerable<Searchmanga>> responeSearch(string value, string url);
         Task<IEnumerable<Searchmanga>> search();
-		Task<IEnumerable<botruyenView>> LayTatCaTruyen(string requestUrl, string routeController);
+		Task<IEnumerable<CRUDView>> LayTatCaTruyen(string requestUrl, string routeController);
 		Task<IEnumerable<botruyenView>> LayDanhSachTruyenTheoPage(int? page, string requestUrl, string routeController);
 		Task<IEnumerable<botruyenView>> LayTatCaTruyenTheoUserId(string userId, string requestUrl, string routeController);
 
@@ -20,6 +20,7 @@ namespace TestWebApi_v1.Repositories
 		Task<bool> TaoTruyen(string idUser, AddeditView mangaDto, IFormFile? MangaImage);
 		Task<bool> SuaTruyen(string idUser, AddeditView mangaDto, IFormFile? MangaImage);
 		Task<bool> UpdateStatusAsync(string mangaId, string idUser);
+		Task<bool> DeleteStatus(string mangaId, string idUser);
 		Task<bool> XoaTruyen(string iduUser, string MangaId);
 		Task<List<botruyenView>> getMangaNewUpdate(string requestUrl, string routeController);
         Task<int> getPageNumber();

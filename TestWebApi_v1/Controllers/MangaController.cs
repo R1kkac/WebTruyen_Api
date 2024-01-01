@@ -258,6 +258,30 @@ namespace TestWebApi_v1.Controllers
 				return BadRequest("Failed to update manga");
 			}
 		}
+		//Cập nhập DeleteStatus bộ truyện
+		[Authorize(Roles = "Admin,Upload")]
+		[HttpPut("DeleteStatus/{mangaId}")]
+		public async Task<IActionResult> UpdateDeleteStatus(string mangaId)
+		{
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			if (userId == null)
+			{
+				return Unauthorized("User is not authorized");
+			}
+
+			bool result = await _mangaModel.DeleteStatus(mangaId, userId);
+
+			if (result)
+			{
+				return Ok("Manga updated successfully");
+			}
+
+			else
+			{
+				return BadRequest("Failed to update manga");
+			}
+		}
 		//Xóa bộ truyện
 		[Authorize(Roles = "Admin,Upload")]
 		[EnableCors("Policy")]

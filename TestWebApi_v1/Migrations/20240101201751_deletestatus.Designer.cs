@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TestWebApi_v1.Models;
 
@@ -11,9 +12,10 @@ using TestWebApi_v1.Models;
 namespace TestWebApi_v1.Migrations
 {
     [DbContext(typeof(WebTruyenTranh_v2Context))]
-    partial class WebTruyenTranh_v2ContextModelSnapshot : ModelSnapshot
+    [Migration("20240101201751_deletestatus")]
+    partial class deletestatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

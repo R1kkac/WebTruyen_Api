@@ -72,10 +72,10 @@ namespace TestWebApi_v1.Repositories
             return data;
         }
 		//Lấy tất cả truyện
-		public async Task<IEnumerable<botruyenView>> LayTatCaTruyen(string requestUrl, string routeController)
+		public async Task<IEnumerable<CRUDView>> LayTatCaTruyen(string requestUrl, string routeController)
 		{
 			// Sử dụng bộ nhớ cục bộ để caching
-			if (_memoryCache.TryGetValue("ListManga", out List<botruyenView> cachedList))
+			if (_memoryCache.TryGetValue("ListManga", out List<CRUDView> cachedList))
 			{
 				return cachedList;
 			}
@@ -85,7 +85,7 @@ namespace TestWebApi_v1.Repositories
 								.OrderByDescending(x => x.Dateupdate)
 								.ToListAsync();
 
-			var result = new List<botruyenView>();
+			var result = new List<CRUDView>();
 
 			foreach (var a in dsbotruyen)
 			{
@@ -93,7 +93,7 @@ namespace TestWebApi_v1.Repositories
 				var map1 = _mapper.Map<BotruyenProfile>(a);
 				map1.requesturl = requestUrl;
 				map1.routecontroller = routeController;
-				var mapmanga = _mapper.Map<botruyenView>(map1);
+				var mapmanga = _mapper.Map<CRUDView>(map1);
 				mapmanga.Rating = rating?.Rating.ToString() ?? "N/A";
 				List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == a.MangaId).OrderByDescending(y => y.ChapterDate)
 					.Take(3).ToListAsync();
@@ -292,6 +292,7 @@ namespace TestWebApi_v1.Repositories
 					Id = user.Id,
 					Dateupdate = DateTime.Now,
 					Status = true,
+                    DeleteStatus = true,
 
 				};
 				if (mangaDto.GenreIds != null)
@@ -389,8 +390,38 @@ namespace TestWebApi_v1.Repositories
 
 					if (boTruyen != null && (isAdmin || boTruyen.Id.Equals(idUser)))
 					{
+						boTruyen.Status = !boTruyen.Status; // Đảo ngược trạng thái hiện tại
+						await _db.SaveChangesAsync();
+						transaction.Commit();
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+				catch (Exception)
+				{
+					transaction.Rollback();
+					return false;
+				}
+			}
+		}
+		//Đưa truyện vào mục "Đã xóa" (DeleteStatus)
+		public async Task<bool> DeleteStatus(string mangaId, string idUser)
+		{
+			using (var transaction = _db.Database.BeginTransaction())
+			{
+				try
+				{
+					var user = await _userManager.FindByIdAsync(idUser);
+					var boTruyen = await _db.BoTruyens.FirstOrDefaultAsync(bt => bt.MangaId == mangaId);
+					var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+
+					if (boTruyen != null && (isAdmin || boTruyen.Id.Equals(idUser)))
+					{
 						// Nếu truyện đang active (true) và sẽ được chuyển thành inactive (false)
-						if (boTruyen.Status.HasValue && boTruyen.Status.Value)
+						if (boTruyen.DeleteStatus.HasValue && boTruyen.DeleteStatus.Value)
 						{
 							boTruyen.MarkedAsDeletedDate = DateTime.UtcNow; // Đánh dấu thời gian xóa
 						}
@@ -399,7 +430,7 @@ namespace TestWebApi_v1.Repositories
 							boTruyen.MarkedAsDeletedDate = null; // Khi truyện được kích hoạt lại
 						}
 
-						boTruyen.Status = !boTruyen.Status; // Đảo ngược trạng thái hiện tại
+						boTruyen.DeleteStatus = !boTruyen.DeleteStatus; // Đảo ngược trạng thái hiện tại
 						await _db.SaveChangesAsync();
 						transaction.Commit();
 						return true;

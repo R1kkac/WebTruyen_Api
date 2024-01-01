@@ -29,6 +29,7 @@ namespace TestWebApi_v1.Models.DbContext
         public string? Id { get; set; }
         public DateTime? Dateupdate { get; set; }
         public bool? Status { get; set; }
+		public bool? DeleteStatus { get; set; }
 		public DateTime? MarkedAsDeletedDate { get; set; }
 
 

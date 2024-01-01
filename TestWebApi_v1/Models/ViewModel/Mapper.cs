@@ -34,6 +34,9 @@ namespace TestWebApi_v1.Models.ViewModel
             CreateMap<ChuongTruyen, chapterView2>();
             CreateMap<ThongbaoUser, NotificationView>();
             CreateMap<BinhLuan, CommentViewModel>();
-        }
+			CreateMap<BotruyenProfile, CRUDView>().ForMember(dest => dest.MangaImage, opt => opt.MapFrom(src =>
+			   src.MangaImage != null ? _Service.getImageManga(src.requesturl ?? "", src.routecontroller ?? "", src.MangaId, src.MangaImage) : null));
+			
+		}
     }
 }

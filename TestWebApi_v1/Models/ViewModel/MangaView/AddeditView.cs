@@ -1,4 +1,5 @@
 ﻿using TestWebApi_v1.Models.DbContext;
+using TestWebApi_v1.Models.TruyenTranh.MangaView;
 
 namespace TestWebApi_v1.Models.ViewModel.MangaView
 {
@@ -15,4 +16,5 @@ namespace TestWebApi_v1.Models.ViewModel.MangaView
 		public string? Id { get; set; }
 		public List<int> GenreIds { get; set; }
 	}
+	
 }
