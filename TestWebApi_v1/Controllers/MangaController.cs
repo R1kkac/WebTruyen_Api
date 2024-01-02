@@ -35,15 +35,7 @@ namespace TestWebApi_v1.Controllers
             _tb2 = tb2;
 
         }
-        //[HttpPost("ChatHub")]
-        //public async Task<IActionResult> chatRealTIme([FromForm] string message, [FromForm]string IdUser)
-        //{
-        //    //User user=await _userManager.FindByIdAsync(IdUser);
-        //    // await _tb.Clients.User(IdUser).SendAsync("message", message);
-        //    //await _tb2.chatRealTime(message, IdUser);
-        //    return Ok();
-        //}
-        //Bộ truyện//
+        //Bộ truyện
         [HttpGet("SearchManga")]
         public async Task<IEnumerable<Searchmanga>> searManga()
         {
@@ -114,7 +106,6 @@ namespace TestWebApi_v1.Controllers
                 return NotFound();
             }
         }
-
         //Lấy ảnh bìa của bộ truyện
         [HttpGet("{idManga}/{imageManga}")]
         public IActionResult MangaImage(string imageManga)
@@ -122,7 +113,6 @@ namespace TestWebApi_v1.Controllers
             var result = _mangaModel.LayAnhTruyen(imageManga);
             return PhysicalFile(result!, "image/jpeg"); 
         }
-
         ////Tạo bộ truyện
         [Authorize(Roles = "Admin,Upload")]
         [HttpPost("Create")]
@@ -148,7 +138,6 @@ namespace TestWebApi_v1.Controllers
                      new ResponeStatus { Status = "Error", Message = $"Đã gặp lỗi trong quá trình thêm truyện" });
             }
         }
-
         //Sửa thông tin của bộ truyện
         [Authorize(Roles = "Admin,Upload")]
         [HttpPut("EditManga/{MangaId}")]
@@ -173,7 +162,6 @@ namespace TestWebApi_v1.Controllers
                     new ResponeStatus { Status = "Error", Message = $"Đã gặp lỗi trong quá trình sửa" });
             }
         }
-
         //Xóa bộ truyện
         [Authorize(Roles = "Admin,Upload")]
         [EnableCors("Policy")]
@@ -243,7 +231,6 @@ namespace TestWebApi_v1.Controllers
                             new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
             }
         }
-
         //Sửa chương truyện của bộ truyện
         [Authorize(Roles = "Admin,Upload")]
         [EnableCors("Policy")]
@@ -267,7 +254,6 @@ namespace TestWebApi_v1.Controllers
                             new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
             }
         }
-
         //Xóa chương truyện
         [Authorize(Roles = "Admin,Upload")]
         [EnableCors("Policy")]
@@ -291,7 +277,6 @@ namespace TestWebApi_v1.Controllers
                             new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
             }
         }
-
         //Lấy danh sách chương truyện của một bộ truyện cụ thể
         [HttpGet("{idManga}/GetChapter")]
         public async Task<IActionResult> getListChapterforMangaAsync(string idManga)
@@ -315,7 +300,6 @@ namespace TestWebApi_v1.Controllers
                             new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình lấy dữ liệu" });
             }
         }
-
         //Lấy danh sách ảnh của chương truyện
         [HttpGet("{idManga}/{idChapter}/getDsImage")]
         public async Task<IActionResult> getdsAnhChapter(string idManga, string idChapter)
@@ -338,7 +322,6 @@ namespace TestWebApi_v1.Controllers
                              new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình truy xuất" });
             }
         }
-
         //Lấy ảnh của chương truyện
         [EnableCors("Policy")]
         [HttpGet("{idManga}/{idChapter}/{image}")]
@@ -352,8 +335,6 @@ namespace TestWebApi_v1.Controllers
             return StatusCode(StatusCodes.Status404NotFound,
                               new ResponeStatus { Status = "Failed", Message = $"Not Found" });
         }
-
-
         //lấy danh sách manga theo thể loại
         [HttpGet("GetmangabyCategory/{idCategory}/{pagenumber}/{pagesize}")]
         public async Task<ResultForMangaView> getMangabyCategry(string idCategory, string pagenumber, string pagesize)

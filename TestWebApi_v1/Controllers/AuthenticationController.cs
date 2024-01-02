@@ -376,8 +376,6 @@ namespace TestWebApi_v1.Controllers
             return StatusCode(StatusCodes.Status403Forbidden,
                     new ResponeStatus { Status = "Failed", Message = result.Message });
         }
-
-
         //Thêm Role cho user {User có thể có nhiều role vd: User,Mod,vv....}
         [HttpPost("AddRoleUser")]
         public async Task<IActionResult> AddRoleUser([FromForm] string idUser, [FromForm] string role)
@@ -404,8 +402,6 @@ namespace TestWebApi_v1.Controllers
             return StatusCode(StatusCodes.Status403Forbidden,
                     new ResponeStatus { Status = "Failed", Message = result.Message });
         }
-
-
         //Lấy danh sách role
         [HttpGet]
         [Route("ListRole")]

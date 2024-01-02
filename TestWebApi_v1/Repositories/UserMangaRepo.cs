@@ -31,24 +31,15 @@ namespace TestWebApi_v1.Repositories
             _roleManager = roleManager;
             _sv = sv;
         }
-
-        //Theo doi truyen
-        //public async Task<List<Bookmark>> DanhSachTheoDoi(string idUser)
-        //{
-        //    var danhsach =await _db.bookmark.Where(x=>x.IdUser.Equals(idUser)).ToListAsync();
-        //    if (danhsach != null)
-        //    {
-        //        return danhsach;
-        //    }
-        //    return new List<Bookmark> { };
-        //}
         public async Task<List<MangaFollowing>> DanhSachTheoDoi(string idUser, string requestUrl)
         {
             string routeController= "Truyen-tranh";
             var dsTruyen = await (from Bookmark in _db.bookmark
                            join BoTruyen in _db.BoTruyens on Bookmark.IdBotruyen equals BoTruyen.MangaId
-                           where Bookmark.IdUser == idUser
-                           select BoTruyen).ToListAsync();
+                           where Bookmark.IdUser == idUser 
+                           && BoTruyen.Status == true
+                           select BoTruyen
+                           ).ToListAsync();
             var map= _mapper.Map<List<ResponeMangaInfo>>(dsTruyen);
             map.ForEach(x =>
             {

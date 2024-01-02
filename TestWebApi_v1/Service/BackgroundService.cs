@@ -39,7 +39,7 @@ namespace TestWebApi_v1.Service
                 // Thực hiện công việc cần chạy
                 int pageSize = 10; // Số lượng bản ghi trên mỗi trang
                 int pageNumber = 1; // Trang hiện tại
-                var dsbotruyen = await _db.BoTruyens.AsNoTracking().ToPagedListAsync(pageNumber, pageSize);
+                var dsbotruyen = await _db.BoTruyens.Where(x=> x.Status == true).AsNoTracking().ToPagedListAsync(pageNumber, pageSize);
                 //var result = new List<BoTruyen>();
                 //foreach (var a in dsbotruyen)
                 //{
