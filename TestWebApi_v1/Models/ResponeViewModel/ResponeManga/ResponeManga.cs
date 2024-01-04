@@ -67,4 +67,36 @@ namespace TestWebApi_v1.Models.TruyenTranh.MangaView
         public string? MangaDetails { get; set; }
         public string? Dateupdate { get; set; }
     }
+	public class CRUDView
+	{
+		public string MangaId { get; set; } = null!;
+		public string? MangaName { get; set; }
+		public string? MangaDetails { get; set; }
+		public string? MangaImage { get; set; }
+		public string? MangaAlternateName { get; set; }
+		public string? MangaAuthor { get; set; }
+		public string? MangaArtist { get; set; }
+		public int? Type { get; set; }
+		public string? Dateupdate { get; set; }
+		public string? Rating { get; set; }
+		public string? View { get; set; }
+		public bool? Status { get; set; }
+		public bool? DeleteStatus { get; set; }
+		public List<chapterView2>? ListChaper { get; set; }
+		public List<TheLoai>? Listcategory { get; set; }
+		public int? Comment { get; set; }
+	}
+	public class AddeditView
+	{
+		public string MangaId { get; set; } = null!;
+		public string MangaName { get; set; } = null!;
+		public string? MangaDetails { get; set; }
+		public string? MangaImage { get; set; }
+		public string? MangaAlternateName { get; set; }
+		public string MangaAuthor { get; set; }
+		public string? MangaArtist { get; set; }
+		public int? Type { get; set; }
+		public string? Id { get; set; }
+		public List<int> GenreIds { get; set; }
+	}
 }

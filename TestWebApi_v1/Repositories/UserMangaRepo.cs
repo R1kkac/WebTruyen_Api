@@ -37,7 +37,7 @@ namespace TestWebApi_v1.Repositories
             var dsTruyen = await (from Bookmark in _db.bookmark
                            join BoTruyen in _db.BoTruyens on Bookmark.IdBotruyen equals BoTruyen.MangaId
                            where Bookmark.IdUser == idUser 
-                           && BoTruyen.Status == true
+                           && BoTruyen.DeleteStatus == true
                            select BoTruyen
                            ).ToListAsync();
             var map= _mapper.Map<List<ResponeMangaInfo>>(dsTruyen);

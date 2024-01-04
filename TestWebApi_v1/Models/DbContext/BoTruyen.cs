@@ -29,10 +29,11 @@ namespace TestWebApi_v1.Models.DbContext
         public string? Id { get; set; }
         public DateTime? Dateupdate { get; set; }
         public bool? Status { get; set; }
+		public bool? DeleteStatus { get; set; }
+		public DateTime? MarkedAsDeletedDate { get; set; }
 
 
-
-        public virtual User? IdNavigation { get; set; }
+		public virtual User? IdNavigation { get; set; }
         public virtual ICollection<ChuongTruyen> ChuongTruyens { get; set; }
         public virtual ICollection<BotruyenViewCount> BotruyenViewCounts { get; set; }
         public virtual ICollection<TheLoai> Genres { get; set; }

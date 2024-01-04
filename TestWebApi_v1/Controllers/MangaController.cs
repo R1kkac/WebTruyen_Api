@@ -14,6 +14,7 @@ using TestWebApi_v1.Service;
 using TestWebApi_v1.Service.Hubs;
 using TestWebApi_v1.Service.Respone;
 
+
 namespace TestWebApi_v1.Controllers
 {
     [Route("Truyen-tranh")]
@@ -66,8 +67,36 @@ namespace TestWebApi_v1.Controllers
             var result =await _mangaModel.getTopmanga(pagenumber, pagesize, typemanga, requestUrl);
             return result;
         }
-        [HttpGet("GetAllManga/{page}")]
-        public async Task<IActionResult> GetManga(int? page)
+		//Lấy tất cả truyện
+		[HttpGet("GetAllManga")]
+		public async Task<IActionResult> GetAllManga()
+		{
+			try
+			{
+				Stopwatch t = new Stopwatch();
+				t.Start();
+				var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
+				string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
+				string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+
+				// Gọi hàm mới để lấy tất cả dữ liệu
+				var result = await _mangaModel.LayTatCaTruyen(requestUrl, routeController);
+
+				_memoryCache.Set("cachedData", result);
+				t.Stop();
+				Console.WriteLine("Eslaped Time QueryDatabase: " + t.Elapsed);
+				return Json(result);
+			}
+			catch (Exception ex)
+			{
+				// Ghi log lỗi nếu cần
+				Console.WriteLine("Error: " + ex.Message);
+				return NotFound();
+			}
+		}
+		//Lấy truyện theo page
+		[HttpGet("GetAllManga/{page}")]
+		public async Task<IActionResult> GetManga(int? page)
         { 
             try
             {
@@ -89,8 +118,36 @@ namespace TestWebApi_v1.Controllers
                 return NotFound();
             }
         }
-        //Lấy thông tin của một bộ truyện cụ thể
-        [HttpGet("Details/{MangaId}")]
+		//Lấy truyện theo User
+		[HttpGet("GetAllUserManga")]
+		public async Task<IActionResult> GetAllUserManga()
+		{
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			try
+			{
+				Stopwatch t = new Stopwatch();
+				t.Start();
+				var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
+				string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
+				string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+
+				// Gọi hàm mới để lấy tất cả dữ liệu
+				var result = await _mangaModel.LayTatCaTruyenTheoUserId(userId, requestUrl, routeController);
+
+				_memoryCache.Set("cachedData", result);
+				t.Stop();
+				Console.WriteLine("Eslaped Time QueryDatabase: " + t.Elapsed);
+				return Json(result);
+			}
+			catch (Exception ex)
+			{
+				// Ghi log lỗi nếu cần
+				Console.WriteLine("Error: " + ex.Message);
+				return NotFound();
+			}
+		}
+		//Lấy thông tin của một bộ truyện cụ thể
+		[HttpGet("Details/{MangaId}")]
         public async Task<IActionResult> getSimpleManga(string MangaId)
         {
             try
@@ -113,85 +170,136 @@ namespace TestWebApi_v1.Controllers
             var result = _mangaModel.LayAnhTruyen(imageManga);
             return PhysicalFile(result!, "image/jpeg"); 
         }
-        ////Tạo bộ truyện
-        [Authorize(Roles = "Admin,Upload")]
-        [HttpPost("Create")]
-        //[EnableCors("Policy")]
-        //public async Task<IActionResult> CreateManga([FromForm] string MangaId, [FromForm] string MangaName, [FromForm] string MangaDetails,
-        //   [FromForm] IFormFile? MangaImage, [FromForm] string MangaAlternateName, [FromForm] string MangaAuthor, [FromForm] string MangaArtist, [FromForm] string MangaGenre)
-        public async Task<IActionResult> CreateManga([FromForm] string Manga, [FromForm] IFormFile? MangaImage)
-        {
-            try
-            {
-                var Id = User.FindFirstValue(ClaimTypes.NameIdentifier).ToString();
-                var result = await _mangaModel.TaoTruyen(Id, Manga, MangaImage);
-                if(result) {
-                    return StatusCode(StatusCodes.Status201Created,
-                     new ResponeStatus { Status = "Success", Message = $"đã tạo thành công"});
-                }
-                return StatusCode(StatusCodes.Status417ExpectationFailed,
-                     new ResponeStatus { Status = "Failed", Message = $"Không thể tạo truyện" });
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status424FailedDependency,
-                     new ResponeStatus { Status = "Error", Message = $"Đã gặp lỗi trong quá trình thêm truyện" });
-            }
-        }
-        //Sửa thông tin của bộ truyện
-        [Authorize(Roles = "Admin,Upload")]
-        [HttpPut("EditManga/{MangaId}")]
-        //[EnableCors("Policy")]
-        public async Task<IActionResult> EditManga([FromForm] string Manga,[FromForm] IFormFile? MangaImage)
-        {
-            try
-            {
-                var Id = User.FindFirstValue(ClaimTypes.NameIdentifier).ToString();
-                var result= await _mangaModel.SuaTruyen(Id, Manga, MangaImage);
-                if (result)
-                {
-                    return StatusCode(StatusCodes.Status201Created,
-                     new ResponeStatus { Status = "Success", Message = $"Truyện đã được sửa thành công" });
-                }
-                return StatusCode(StatusCodes.Status417ExpectationFailed,
-                  new ResponeStatus { Status = "Failed", Message = $"Truyện sửa thất bại" });
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status400BadRequest,
-                    new ResponeStatus { Status = "Error", Message = $"Đã gặp lỗi trong quá trình sửa" });
-            }
-        }
-        //Xóa bộ truyện
-        [Authorize(Roles = "Admin,Upload")]
-        [EnableCors("Policy")]
-        [HttpDelete("Delete/{MangaId}")]
-        public  async Task<IActionResult> DeleteManga(string MangaId)
-        {
-            try
-            {
-                var Id = User.FindFirstValue(ClaimTypes.NameIdentifier).ToString();
-                var result= await _mangaModel.XoaTruyen(Id, MangaId);
-                if (result)
-                {
-                    return StatusCode(StatusCodes.Status200OK,
-                            new ResponeStatus { Status = "Success", Message = $"Xóa thành công" });
-                }
-                return StatusCode(StatusCodes.Status404NotFound,
-                            new ResponeStatus { Status = "Failed", Message = $"Xóa thất bại" });
-            }
-            catch(Exception)
-            {
-                return StatusCode(StatusCodes.Status404NotFound,
-                            new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình xóa" });
-            }
-        }
+		//Lấy tất cả tên truyện
+		[HttpGet("GetAllNameManga")]
+		public async Task<IActionResult> GetAllNameManga()
+		{
+			try
+			{
+				var danhSachTenTruyen = await _mangaModel.LayDanhSachTenTruyen();
+				return Ok(danhSachTenTruyen);
+			}
+			catch (Exception ex)
+			{
+				// Ghi log lỗi nếu cần
+				return StatusCode(StatusCodes.Status500InternalServerError, "Lỗi khi lấy danh sách tên truyện: " + ex.Message);
+			}
+		}
+		////Tạo bộ truyện
+		[Authorize(Roles = "Admin,Upload")]
+		[HttpPost("Create")]
+		//[EnableCors("Policy")]
+		public async Task<IActionResult> TaoTruyen([FromForm] AddeditView mangaDto, IFormFile? mangaImage)
+		{
+			string userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Lấy ID của người dùng hiện tại
+			bool result = await _mangaModel.TaoTruyen(userId, mangaDto, mangaImage);
 
-        //End Bộ truyện//
-        //Chương truyện//
+			if (result)
+				return Ok();
+			else
+				return BadRequest("Không thể tạo truyện");
+		}
+		//Sửa thông tin của bộ truyện
+		[Authorize(Roles = "Admin,Upload")]
+		[HttpPut("EditManga/{MangaId}")]
+		//[EnableCors("Policy")]
+		public async Task<IActionResult> EditManga(string mangaId, [FromForm] AddeditView mangaDto, IFormFile? mangaImage)
+		{
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Lấy ID người dùng hiện tại
+			if (userId == null)
+			{
+				return Unauthorized("User is not authorized");
+			}
 
-        //Lấy danh sách tất cả chương truyện
-        [HttpGet("GetdsChapter")]
+			bool result = await _mangaModel.SuaTruyen(userId, mangaDto, mangaImage);
+
+			if (result)
+			{
+				return Ok("Manga updated successfully");
+			}
+			else
+			{
+				return BadRequest("Failed to update manga");
+			}
+		}
+		//Cập nhập Status bộ truyện
+		[Authorize(Roles = "Admin,Upload")]
+		[HttpPut("Status/{mangaId}")]
+		public async Task<IActionResult> UpdateStatus(string mangaId)
+		{
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			if (userId == null)
+			{
+				return Unauthorized("User is not authorized");
+			}
+
+			bool result = await _mangaModel.UpdateStatusAsync(mangaId, userId);
+
+			if (result)
+			{
+				return Ok("Manga updated successfully");
+			}
+
+			else
+			{
+				return BadRequest("Failed to update manga");
+			}
+		}
+		//Cập nhập DeleteStatus bộ truyện
+		[Authorize(Roles = "Admin,Upload")]
+		[HttpPut("DeleteStatus/{mangaId}")]
+		public async Task<IActionResult> UpdateDeleteStatus(string mangaId)
+		{
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+			if (userId == null)
+			{
+				return Unauthorized("User is not authorized");
+			}
+
+			bool result = await _mangaModel.DeleteStatus(mangaId, userId);
+
+			if (result)
+			{
+				return Ok("Manga updated successfully");
+			}
+
+			else
+			{
+				return BadRequest("Failed to update manga");
+			}
+		}
+		//Xóa bộ truyện
+		[Authorize(Roles = "Admin,Upload")]
+		[EnableCors("Policy")]
+		[HttpDelete("Delete/{MangaId}")]
+		public async Task<IActionResult> DeleteManga(string MangaId)
+		{
+			try
+			{
+				var Id = User.FindFirstValue(ClaimTypes.NameIdentifier).ToString();
+				var result = await _mangaModel.XoaTruyen(Id, MangaId);
+				if (result)
+				{
+					return StatusCode(StatusCodes.Status200OK,
+							new ResponeStatus { Status = "Success", Message = $"Xóa thành công" });
+				}
+				return StatusCode(StatusCodes.Status404NotFound,
+							new ResponeStatus { Status = "Failed", Message = $"Xóa thất bại" });
+			}
+			catch (Exception)
+			{
+				return StatusCode(StatusCodes.Status404NotFound,
+							new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình xóa" });
+			}
+		}
+
+		//End Bộ truyện//
+		//Chương truyện//
+
+		//Lấy danh sách tất cả chương truyện
+		[HttpGet("GetdsChapter")]
         public async Task<IActionResult> layDanhsachChapter()
         {
             try
@@ -206,79 +314,102 @@ namespace TestWebApi_v1.Controllers
             }
         }
 
-        //Tạo chương truyện của bộ truyện
-        [Authorize(Roles = "Admin,Upload")]
-        [EnableCors("Policy")]
-        [HttpPost("{MangaId}/CreateChapter")]
-        //public async Task<IActionResult> CreateChapter([FromForm] string MangaId, [FromForm] string ChapterId,
-        //    [FromForm] string tenChuong, [FromForm] string TieuDe, [FromForm] List<IFormFile> MangaImage, [FromForm] List<string> MangaUrl)
-        public async Task<IActionResult> CreateChapter([FromForm] string Chapter, [FromForm] List<IFormFile> MangaImage, [FromForm] List<string> MangaUrl)
-        {
-            try
-            {
-                var result= await _mangaModel.TaoChuongTruyen(Chapter, MangaImage, MangaUrl);
-                if (result)
-                {
-                    return StatusCode(StatusCodes.Status200OK,
-                            new ResponeStatus { Status = "Success", Message = $"Thành công" });
-                }
-                return StatusCode(StatusCodes.Status404NotFound,
-                            new ResponeStatus { Status = "Failed", Message = $"Thất bại" });
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status404NotFound,
-                            new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
-            }
-        }
-        //Sửa chương truyện của bộ truyện
-        [Authorize(Roles = "Admin,Upload")]
-        [EnableCors("Policy")]
-        [HttpPut("{MangaId}/{ChapterId}/EditChapter")]
-        public async Task<IActionResult> editChapter([FromForm] string Chapter, [FromForm] List<IFormFile> MangaImage,[FromForm] List<string> MangaUrl)
-        {
-            try
-            {
-                var result= await _mangaModel.SuaChuongTruyen(Chapter, MangaImage,MangaUrl);
-                if (result)
-                {
-                    return StatusCode(StatusCodes.Status200OK,
-                            new ResponeStatus { Status = "Success", Message = $"Thành công" });
-                }
-                return StatusCode(StatusCodes.Status404NotFound,
-                            new ResponeStatus { Status = "Failed", Message = $"Thất bại" });
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status404NotFound,
-                            new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
-            }
-        }
-        //Xóa chương truyện
-        [Authorize(Roles = "Admin,Upload")]
-        [EnableCors("Policy")]
-        [HttpDelete("{MangaId}/{ChapterId}/DeleteChapter")]
-        public async Task<IActionResult> deleteChapter(string MangaId ,string ChapterId)
-        {
-            try
-            {
-                var result= await _mangaModel.XoaChuongTruyen(MangaId,ChapterId);
-                if (result)
-                {
-                    return StatusCode(StatusCodes.Status404NotFound,
-                            new ResponeStatus { Status = "Success", Message = $"Xóa thành công" });
-                }
-                return StatusCode(StatusCodes.Status404NotFound,
-                            new ResponeStatus { Status = "Failes", Message = $"Xóa thất bại" });
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status404NotFound,
-                            new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
-            }
-        }
-        //Lấy danh sách chương truyện của một bộ truyện cụ thể
-        [HttpGet("{idManga}/GetChapter")]
+		//Lấy tất cả tên chương
+		[HttpGet("GetAllNameChapter/{MangaId}")]
+		public async Task<IActionResult> GetAllNameChapter(string MangaId)
+		{
+			try
+			{
+				var danhSachTenTruyen = await _mangaModel.LayDanhSachTenChuong(MangaId);
+				return Ok(danhSachTenTruyen);
+			}
+			catch (Exception ex)
+			{
+				// Ghi log lỗi nếu cần
+				return StatusCode(StatusCodes.Status500InternalServerError, "Lỗi khi lấy danh sách tên truyện: " + ex.Message);
+			}
+		}
+
+		//Tạo chương truyện của bộ truyện
+		[Authorize(Roles = "Admin,Upload")]
+		[EnableCors("Policy")]
+		[HttpPost("{MangaId}/CreateChapter")]
+		public async Task<IActionResult> CreateChapter([FromForm] string Chapter, [FromForm] List<IFormFile> MangaImage, [FromForm] List<string> MangaUrl)
+		{
+			try
+			{
+				var result = await _mangaModel.TaoChuongTruyen(Chapter, MangaImage, MangaUrl);
+				if (result)
+				{
+					return StatusCode(StatusCodes.Status200OK,
+							new ResponeStatus { Status = "Success", Message = $"Thành công" });
+				}
+				return StatusCode(StatusCodes.Status404NotFound,
+							new ResponeStatus { Status = "Failed", Message = $"Thất bại" });
+			}
+			catch (Exception)
+			{
+				return StatusCode(StatusCodes.Status404NotFound,
+							new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi" });
+			}
+		}
+
+		//Sửa chương truyện của bộ truyện
+		[Authorize(Roles = "Admin,Upload")]
+		[EnableCors("Policy")]
+		[HttpPut("{MangaId}/{ChapterId}/EditChapter")]
+		public async Task<IActionResult> editChapter([FromForm] string Chapter, [FromForm] List<IFormFile> MangaImage, [FromForm] List<string> MangaUrl)
+		{
+			try
+			{
+				var result = await _mangaModel.SuaChuongTruyen(Chapter, MangaImage, MangaUrl);
+				if (result)
+				{
+					return Ok(new ResponeStatus { Status = "Success", Message = "Chỉnh sửa thành công" });
+				}
+				else
+				{
+					// Dữ liệu không tìm thấy hoặc không thể chỉnh sửa
+					return NotFound(new ResponeStatus { Status = "Failed", Message = "Chương truyện không tìm thấy hoặc không thể chỉnh sửa" });
+				}
+			}
+			catch (Exception ex)
+			{
+				// Lỗi server
+				return StatusCode(StatusCodes.Status500InternalServerError,
+						  new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
+			}
+		}
+
+		//Xóa chương truyện
+		[Authorize(Roles = "Admin,Upload")]
+		[EnableCors("Policy")]
+		[HttpDelete("{MangaId}/{ChapterId}/DeleteChapter")]
+		public async Task<IActionResult> deleteChapter(string MangaId, string ChapterId)
+		{
+			try
+			{
+				var result = await _mangaModel.XoaChuongTruyen(MangaId, ChapterId);
+				if (result)
+				{
+					return Ok(new ResponeStatus { Status = "Success", Message = "Xóa thành công" });
+				}
+				else
+				{
+					// Nếu không tìm thấy chương để xóa
+					return NotFound(new ResponeStatus { Status = "Not Found", Message = "Chương không tìm thấy để xóa" });
+				}
+			}
+			catch (Exception ex)
+			{
+				// Trả về lỗi nội bộ của server
+				return StatusCode(StatusCodes.Status500InternalServerError,
+						  new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
+			}
+		}
+
+		//Lấy danh sách chương truyện của một bộ truyện cụ thể
+		[HttpGet("{idManga}/GetChapter")]
         public async Task<IActionResult> getListChapterforMangaAsync(string idManga)
         {
             try
@@ -343,13 +474,84 @@ namespace TestWebApi_v1.Controllers
             var result = await _mangaModel.getMangaByCategory(idCategory, pagenumber, pagesize, requestUrl);
             return result;
         }
+
         //lấy danh sách thể loại
         [HttpGet("Category/Getall")]
-        public async Task<List<ResponeCategory>> getCategories()
-        {
-            var result =await _mangaModel.getListCategory();
-            return result;
-        }
+		public async Task<List<ResponeCategory>> getCategories()
+		{
+			var result = await _mangaModel.getListCategory();
+			return result;
+		}
+		//Thêm thể loại
+		[Authorize(Roles = "Admin")]
+		[EnableCors("Policy")]
+		[HttpPost("CreateGenre")]
+		public async Task<IActionResult> CreateGenre([FromBody] CategoryAddedit categoryAddedit)
+		{
+			bool result = await _mangaModel.AddTheLoai(categoryAddedit);
+
+			if (result)
+			{
+				return Ok(new { message = "Genre created successfully." });
+			}
+			else
+			{
+				return BadRequest(new { message = "Failed to create genre." });
+			}
+		}
+		//Xóa thể loại
+		[Authorize(Roles = "Admin")]
+		[EnableCors("Policy")]
+		[HttpDelete("{GenreId}/DeleteGenre")]
+		public async Task<IActionResult> deleteGenre(int GenreId)
+		{
+			try
+			{
+				var result = await _mangaModel.DeleteTheLoai(GenreId);
+				if (result)
+				{
+					return Ok(new ResponeStatus { Status = "Success", Message = "Xóa thành công" });
+				}
+				else
+				{
+					// Phân biệt giữa không tìm thấy và không thể xóa do có liên kết
+					return BadRequest(new ResponeStatus { Status = "Bad Request", Message = "Thể loại không thể xóa do có bộ truyện liên kết" });
+				}
+			}
+			catch (Exception ex)
+			{
+				// Trả về lỗi nội bộ của server
+				return StatusCode(StatusCodes.Status500InternalServerError,
+						  new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
+			}
+		}
+		//Sửa thể loại
+		[Authorize(Roles = "Admin")]
+		[EnableCors("Policy")]
+		[HttpPut("{GenreId}/UpdateGenre")]
+		public async Task<IActionResult> UpdateGenre(int GenreId, [FromBody] CategoryAddedit categoryAddedit)
+		{
+			try
+			{
+				var result = await _mangaModel.UpdateTheLoai(GenreId, categoryAddedit);
+				if (result)
+				{
+					return Ok(new ResponeStatus { Status = "Success", Message = "Cập nhật thể loại thành công" });
+				}
+				else
+				{
+					// Phân biệt giữa không tìm thấy và lỗi khác
+					return BadRequest(new ResponeStatus { Status = "Bad Request", Message = "Không tìm thấy thể loại hoặc không thể cập nhật" });
+				}
+			}
+			catch (Exception ex)
+			{
+				// Trả về lỗi nội bộ của server
+				return StatusCode(StatusCodes.Status500InternalServerError,
+						  new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
+			}
+		}
+		
         //lấy danh sách trang
         [HttpGet("GetPageNumber")]
         public async Task<int> getPageNumber()
@@ -438,5 +640,19 @@ namespace TestWebApi_v1.Controllers
                 // ...
             }
         }
-    }
+		//Lấy số lượng truyện đăng tải
+		[HttpGet("PublishedStoryCount")]
+		public async Task<IActionResult> GetPublishedStoryCount()
+		{
+			var count = await _mangaModel.GetDailyPublishedStoryCountAsync();
+			return Ok(count);
+		}
+		//Lấy kiểu truyện
+		[HttpGet("GetAllType")]
+		public IActionResult GetAll()
+		{
+			var typeMangas = _mangaModel.GetAllTypeMangas();
+			return Ok(typeMangas);
+		}
+	}
 }

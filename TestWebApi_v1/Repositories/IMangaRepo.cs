@@ -9,14 +9,19 @@ namespace TestWebApi_v1.Repositories
         //Botruyen
         Task<IEnumerable<Searchmanga>> responeSearch(string value, string url);
         Task<IEnumerable<Searchmanga>> search();
-        Task<IEnumerable<ResponeManga>> LayDanhSachTruyenTheoPage(int? page, string requestUrl, string routeController);
-        Task<ResponeManga?> LayThongTinTruyen(string MangaId, string requestUrl, string routeController);
+		Task<IEnumerable<CRUDView>> LayTatCaTruyen(string requestUrl, string routeController);
+		Task<IEnumerable<ResponeManga>> LayDanhSachTruyenTheoPage(int? page, string requestUrl, string routeController);
+		Task<IEnumerable<CRUDView>> LayTatCaTruyenTheoUserId(string userId, string requestUrl, string routeController);
+		Task<ResponeManga?> LayThongTinTruyen(string MangaId, string requestUrl, string routeController);
         Task<List<botruyenViewforTopmanga>> danhSahcBotruyen(int type, int pagenumber, int pagesize, string requesurl);
         string? LayAnhTruyen(string imageManga);
-        Task<bool> TaoTruyen(string idUser, string Manga, IFormFile? MangaImage);
-        Task<bool> SuaTruyen(string Id, string Manga, IFormFile? MangaImage);
-        Task<bool> XoaTruyen(string iduUser, string MangaId);
-        Task<List<ResponeManga>> getMangaNewUpdate(string requestUrl, string routeController);
+		Task<IEnumerable<string>> LayDanhSachTenTruyen();
+		Task<bool> TaoTruyen(string idUser, AddeditView mangaDto, IFormFile? MangaImage);
+		Task<bool> SuaTruyen(string idUser, AddeditView mangaDto, IFormFile? MangaImage);
+		Task<bool> UpdateStatusAsync(string mangaId, string idUser);
+		Task<bool> DeleteStatus(string mangaId, string idUser);
+		Task<bool> XoaTruyen(string iduUser, string MangaId);
+		Task<List<ResponeManga>> getMangaNewUpdate(string requestUrl, string routeController);
         Task<int> getPageNumber();
         Task<ResultForTopView> getTopmanga(int page, int number, int type, string requestUrl);
         Task<List<ResponeManga>> getMangaByCategories(List<string> listCategories, string requestUrl, string routeController);
@@ -26,23 +31,29 @@ namespace TestWebApi_v1.Repositories
         Task<List<TopManga>> TopmangabyYear(int? page, string requestUrl, string routeController);
         Task<List<TopManga>> getTopMangaDefault(string requestUrl, string routeController);
         Task<int> numbermanga();
+		Task<Dictionary<DateTime, int>> GetDailyPublishedStoryCountAsync();
 
 
 
 
 
 
-        //Chuongttuyen
-        Task<IEnumerable<ChuongTruyen>> LayTatcaChuongTruyen();
-        Task<bool> TaoChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl);
-        Task<bool> SuaChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl);
-        Task<bool> XoaChuongTruyen(string MangaId, string ChapterId);
-        Task<IEnumerable<chapterView2>> DanhSachChuongCuaBoTruyen(string idManga, string requestUrl, string routeController);
+		//Chuongttuyen
+		Task<IEnumerable<ChuongTruyen>> LayTatcaChuongTruyen();
+		Task<IEnumerable<string>> LayDanhSachTenChuong(string MangaId);
+		Task<bool> TaoChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl);
+		Task<bool> SuaChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl);
+		Task<bool> XoaChuongTruyen(string MangaId, string ChapterId);
+		Task<IEnumerable<chapterView2>> DanhSachChuongCuaBoTruyen(string idManga, string requestUrl, string routeController);
         Task<IEnumerable<string>> DanhSachAnhTheoChuong(string idManga, string idChapter, string requestUrl, string routeController);
         string LayAnh(string idManga, string idChapter, string image);
         //Theloai
         Task<List<ResponeCategory>> getListCategory();
-        Task<ResultForMangaView> getMangaByCategory(string id,string pagenumber, string pagesize, string requestUrl);
+		Task<bool> AddTheLoai(CategoryAddedit categoryAddedit);
+		Task<bool> DeleteTheLoai(int genreId);
+		Task<bool> UpdateTheLoai(int genreId, CategoryAddedit categoryAddedit);
+		Task<ResultForMangaView> getMangaByCategory(string id,string pagenumber, string pagesize, string requestUrl);
+		IEnumerable<TypeManga> GetAllTypeMangas();
 
-    }
+	}
 }

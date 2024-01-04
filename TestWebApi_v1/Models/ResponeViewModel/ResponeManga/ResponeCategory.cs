@@ -6,4 +6,9 @@
         public string? GenresIdName { get; set; }
         public string? Info { get; set; }
     }
+	public class CategoryAddedit
+	{
+		public string? GenresIdName { get; set; }
+		public string? Info { get; set; }
+	}
 }

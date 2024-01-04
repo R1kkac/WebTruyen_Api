@@ -12,7 +12,8 @@ namespace TestWebApi_v1.Repositories
     public interface IUserRepo
     {
         Task<UserInfo?> layThongTinNguoiDung(string idUser);
-        Task<ResponeRegister> DangKytaiKhoan(string User);
+		Task<IEnumerable<ResponeRole>> GetUserRolesAsync(string userId);
+		Task<ResponeRegister> DangKytaiKhoan(string User);
         Task<ResponeData> SuaThongTinTaiKhoan(string User, IFormFile? Avatar);
         Task<ResponeData> XoataiKhoan(string email);
         Task<bool> thayDoiMatKhau(string userchangepassword);
