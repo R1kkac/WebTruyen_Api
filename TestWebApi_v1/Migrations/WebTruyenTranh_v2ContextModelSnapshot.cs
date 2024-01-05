@@ -180,6 +180,9 @@ namespace TestWebApi_v1.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(10)");
 
+                    b.Property<int>("ImageIndex")
+                        .HasColumnType("int");
+
                     b.Property<string>("ImageName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

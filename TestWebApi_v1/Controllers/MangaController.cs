@@ -7,6 +7,7 @@ using Microsoft.Extensions.Caching.Memory;
 using System.Diagnostics;
 using System.Security.Claims;
 using TestWebApi_v1.Models.DbContext;
+using TestWebApi_v1.Models.ResponeViewModel.ResponeManga;
 using TestWebApi_v1.Models.TruyenTranh.MangaView;
 using TestWebApi_v1.Models.ViewModel.MangaView;
 using TestWebApi_v1.Repositories;
@@ -320,8 +321,8 @@ namespace TestWebApi_v1.Controllers
 		{
 			try
 			{
-				var danhSachTenTruyen = await _mangaModel.LayDanhSachTenChuong(MangaId);
-				return Ok(danhSachTenTruyen);
+				var danhSachTenChuong = await _mangaModel.LayDanhSachTenChuong(MangaId);
+				return Ok(danhSachTenChuong);
 			}
 			catch (Exception ex)
 			{
@@ -431,8 +432,34 @@ namespace TestWebApi_v1.Controllers
                             new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình lấy dữ liệu" });
             }
         }
-        //Lấy danh sách ảnh của chương truyện
-        [HttpGet("{idManga}/{idChapter}/getDsImage")]
+		//Lấy chương truyện của một bộ truyện cụ thể
+		[HttpGet("{idManga}/{idChapter}/GetChapterInfo")]
+		public async Task<IActionResult> GetChapterInfoMangaAsync(string idManga, string idChapter)
+		{
+			try
+			{
+				var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
+				string routeController = routeAttribute?.Template ?? "";
+				string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+				var result = await _mangaModel.ThongTinChuongTruyen(idManga, idChapter, requestUrl, routeController);
+
+				if (result != null)
+				{
+					return Ok(result);
+				}
+				else
+				{
+					return NotFound(new ResponeStatus { Status = "Failed", Message = "Truy xuất thất bại, không tìm thấy chương truyện." });
+				}
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(StatusCodes.Status500InternalServerError,
+					new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình lấy dữ liệu: {ex.Message}" });
+			}
+		}
+		//Lấy danh sách ảnh của chương truyện
+		[HttpGet("{idManga}/{idChapter}/getDsImage")]
         public async Task<IActionResult> getdsAnhChapter(string idManga, string idChapter)
         {
             try
@@ -453,8 +480,82 @@ namespace TestWebApi_v1.Controllers
                              new ResponeStatus { Status = "Error", Message = $"Gặp lỗi trong quá trình truy xuất" });
             }
         }
-        //Lấy ảnh của chương truyện
-        [EnableCors("Policy")]
+		//Lấy tất cả thông tin ảnh của chương
+		[HttpGet("{idManga}/{idChapter}/getAllImage")]
+		public async Task<IActionResult> GetAllAnhChapter(string idManga, string idChapter)
+		{
+			try
+			{
+				var routeAttribute = ControllerContext.ActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(RouteAttribute), false).FirstOrDefault() as RouteAttribute;
+				string routeController = (routeAttribute != null) ? routeAttribute.Template : "";
+				string requestUrl = $"{Request.Scheme}://{Request.Host.Value}/";
+
+				// Gọi hàm GetAllImageInChapter mới
+				var result = await _mangaModel.GetAllImageInChapter(idManga, idChapter, requestUrl, routeController);
+
+				if (result.Any())
+				{
+					return Ok(result);
+				}
+				else
+				{
+					return NotFound(new ResponeStatus { Status = "Failed", Message = "Không tìm thấy ảnh." });
+				}
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(StatusCodes.Status500InternalServerError,
+								  new ResponeStatus { Status = "Error", Message = $"Lỗi: {ex.Message}" });
+			}
+		}
+		//Cập nhập ảnh chương
+		[Authorize(Roles = "Admin,Upload")]
+		[EnableCors("Policy")]
+		[HttpPut("{MangaId}/{ChapterId}/UploadImage")]
+		public async Task<IActionResult> UploadImages([FromForm] string chapter, [FromForm] List<IFormFile> mangaImages, [FromForm] List<string> mangaUrls)
+		{
+			try
+			{
+				var result = await _mangaModel.UploadChapterImages(chapter, mangaImages, mangaUrls);
+				if (result)
+				{
+					return Ok(new { message = "Hình ảnh đã được tải lên thành công." });
+				}
+				else
+				{
+					return BadRequest(new { message = "Không thể tải lên hình ảnh." });
+				}
+			}
+			catch (System.Exception ex)
+			{
+				return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+			}
+		}
+
+		//Xóa ảnh chương
+		[HttpDelete("{mangaId}/{chapterId}/{imageId}/DeleteImage")]
+		public async Task<IActionResult> DeleteImage(string mangaId, string chapterId, int imageId)
+		{
+			try
+			{
+				bool isDeleted = await _mangaModel.DeleteChapterImage(mangaId, chapterId, imageId);
+				if (isDeleted)
+				{
+					return Ok(new { message = "Ảnh đã được xóa thành công." });
+				}
+				else
+				{
+					return NotFound(new { message = "Ảnh không được tìm thấy." });
+				}
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"Lỗi máy chủ: {ex.Message}" });
+			}
+		}
+
+		//Lấy ảnh của chương truyện
+		[EnableCors("Policy")]
         [HttpGet("{idManga}/{idChapter}/{image}")]
         public IActionResult getListImageChapter(string idManga, string idChapter,string image)
         {
@@ -654,5 +755,27 @@ namespace TestWebApi_v1.Controllers
 			var typeMangas = _mangaModel.GetAllTypeMangas();
 			return Ok(typeMangas);
 		}
+		//xử lý yêu cầu cập nhật vị trí ảnh
+		[HttpPost("{mangaId}/{chapterId}/UpdateImagePositions")]
+		public async Task<IActionResult> UpdateImagePositions(string mangaId, string chapterId, [FromBody] List<ImagePositionUpdateModel> imageUpdates)
+		{
+			if (imageUpdates == null || imageUpdates.Count == 0)
+			{
+				return BadRequest("Dữ liệu không hợp lệ.");
+			}
+
+			try
+			{
+				await _mangaModel.UpdateImagePositions(mangaId, chapterId, imageUpdates);
+				return Ok(new { message = "Cập nhật thành công." });
+			}
+			catch (Exception ex)
+			{
+				// Xử lý lỗi
+				return StatusCode(500, "Có lỗi xảy ra: " + ex.Message);
+			}
+		}
+
+
 	}
 }

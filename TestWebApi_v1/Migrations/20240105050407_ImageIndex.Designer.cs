@@ -12,8 +12,8 @@ using TestWebApi_v1.Models;
 namespace TestWebApi_v1.Migrations
 {
     [DbContext(typeof(WebTruyenTranh_v2Context))]
-    [Migration("20240103185842_deletestatus")]
-    partial class deletestatus
+    [Migration("20240105050407_ImageIndex")]
+    partial class ImageIndex
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -181,6 +181,9 @@ namespace TestWebApi_v1.Migrations
                         .HasMaxLength(10)
                         .IsUnicode(false)
                         .HasColumnType("varchar(10)");
+
+                    b.Property<int>("ImageIndex")
+                        .HasColumnType("int");
 
                     b.Property<string>("ImageName")
                         .IsRequired()

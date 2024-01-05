@@ -1,4 +1,5 @@
 ﻿using TestWebApi_v1.Models.DbContext;
+using TestWebApi_v1.Models.ResponeViewModel.ResponeManga;
 using TestWebApi_v1.Models.TruyenTranh.MangaView;
 using TestWebApi_v1.Models.ViewModel.MangaView;
 
@@ -45,8 +46,15 @@ namespace TestWebApi_v1.Repositories
 		Task<bool> SuaChuongTruyen(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl);
 		Task<bool> XoaChuongTruyen(string MangaId, string ChapterId);
 		Task<IEnumerable<chapterView2>> DanhSachChuongCuaBoTruyen(string idManga, string requestUrl, string routeController);
-        Task<IEnumerable<string>> DanhSachAnhTheoChuong(string idManga, string idChapter, string requestUrl, string routeController);
-        string LayAnh(string idManga, string idChapter, string image);
+		Task<chapterView2> ThongTinChuongTruyen(string idManga, string chapterId, string requestUrl, string routeController);
+
+		Task<IEnumerable<string>> DanhSachAnhTheoChuong(string idManga, string idChapter, string requestUrl, string routeController);
+		Task<IEnumerable<ChapterImageModel>> GetAllImageInChapter(string idManga, string idChapter, string requestUrl, string routeController);
+		Task<bool> UploadChapterImages(string Chapter, List<IFormFile> MangaImage, List<string> MangaUrl);
+		Task<bool> DeleteChapterImage(string mangaId, string chapterId, int imageId);
+		Task UpdateImagePositions(string mangaId, string chapterId, List<ImagePositionUpdateModel> imageUpdates);
+
+		string LayAnh(string idManga, string idChapter, string image);
         //Theloai
         Task<List<ResponeCategory>> getListCategory();
 		Task<bool> AddTheLoai(CategoryAddedit categoryAddedit);

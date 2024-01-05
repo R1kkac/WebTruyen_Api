@@ -9,7 +9,8 @@ namespace TestWebApi_v1.Models.DbContext
         public string ImageName { get; set; } = null!;
         public string? ImageUl { get; set; }
         public string ChapterId { get; set; } = null!;
+		public int ImageIndex { get; set; }
 
-        public virtual ChuongTruyen Chapter { get; set; } = null!;
+		public virtual ChuongTruyen Chapter { get; set; } = null!;
     }
 }

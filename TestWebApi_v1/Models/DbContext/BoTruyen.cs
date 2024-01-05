@@ -42,8 +42,6 @@ namespace TestWebApi_v1.Models.DbContext
         public virtual TypeManga? TypeNavigation { get; set; }
         public virtual ICollection<BinhLuan> BinhLuans { get; set; }
         public virtual ICollection<ChatRoom> ChatRooms { get; set; }
-
-
     }
     public class BoTruyenTopView
     {
