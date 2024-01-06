@@ -454,7 +454,7 @@ namespace TestWebApi_v1.Repositories
 			}
 		}
 		//Xóa bộ truyện
-		public async Task<bool> XoaTruyen(string iduUser, string MangaId)
+		public async Task<bool> XoaTruyen(string iduUser, string MangaId)	
 		{
 			var user = await _userManager.FindByIdAsync(iduUser);
 			var truyen = await _db.BoTruyens
@@ -1273,9 +1273,54 @@ namespace TestWebApi_v1.Repositories
             return map;
         }
 
+
+		//------------------------------------------------End-Categories----------------------------------------------------//
+		//-------------------------------------------------TypeMangas-----------------------------------------------------//
+
+		//Lấy tất cả kiểu truyện
 		public IEnumerable<TypeManga> GetAllTypeMangas()
 		{
 			return _db.TypeMangas.ToList();
 		}
+		//Thêm kiểu truyện
+		public async Task<bool> AddTypeManga(ResponeType typeMangaDTO)
+		{
+			var typeManga = new TypeManga
+			{
+				Name = typeMangaDTO.Name
+			};
+
+			_db.TypeMangas.Add(typeManga);
+			int result = await _db.SaveChangesAsync();
+			return result > 0;
+		}
+		//Xóa kiểu truyện
+		public async Task<bool> DeleteTypeManga(int id)
+		{
+			var typeManga = await _db.TypeMangas.FindAsync(id);
+			if (typeManga == null)
+			{
+				return false;
+			}
+
+			_db.TypeMangas.Remove(typeManga);
+			int result = await _db.SaveChangesAsync();
+			return result > 0;
+		}
+		//Sửa kiểu truyện
+		public async Task<bool> UpdateTypeManga(ResponeType typeMangaDTO)
+		{
+			var existingTypeManga = await _db.TypeMangas.FindAsync(typeMangaDTO.Id);
+			if (existingTypeManga == null)
+			{
+				return false;
+			}
+
+			existingTypeManga.Name = typeMangaDTO.Name;
+			_db.TypeMangas.Update(existingTypeManga);
+			int result = await _db.SaveChangesAsync();
+			return result > 0;
+		}
+
 	}
 }

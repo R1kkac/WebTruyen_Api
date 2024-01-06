@@ -775,6 +775,53 @@ namespace TestWebApi_v1.Controllers
 				return StatusCode(500, "Có lỗi xảy ra: " + ex.Message);
 			}
 		}
+		//Thêm kiểu truyện
+		[HttpPost("AddType")]
+		public async Task<IActionResult> AddTypeManga([FromBody] ResponeType typeManga)
+		{
+			bool result = await _mangaModel.AddTypeManga(typeManga);
+			if (result)
+			{
+				return Ok(new { message = "Thêm loại truyện thành công." });
+			}
+			else
+			{
+				return BadRequest(new { message = "Không thể thêm loại truyện." });
+			}
+		}
+		//Xóa kiểu truyện
+		[HttpDelete("DeleteType/{id}")]
+		public async Task<IActionResult> DeleteTypeManga(int id)
+		{
+			bool result = await _mangaModel.DeleteTypeManga(id);
+			if (result)
+			{
+				return Ok(new { message = "Xóa loại truyện thành công." });
+			}
+			else
+			{
+				return NotFound(new { message = "Loại truyện không tồn tại." });
+			}
+		}
+		//Sửa kiểu truyện
+		[HttpPut("EditType/{id}")]
+		public async Task<IActionResult> UpdateTypeManga(int id, [FromBody] ResponeType typeManga)
+		{
+			if (id != typeManga.Id)
+			{
+				return BadRequest(new { message = "ID không khớp." });
+			}
+
+			bool result = await _mangaModel.UpdateTypeManga(typeManga);
+			if (result)
+			{
+				return Ok(new { message = "Cập nhật loại truyện thành công." });
+			}
+			else
+			{
+				return NotFound(new { message = "Loại truyện không tồn tại." });
+			}
+		}
 
 
 	}
