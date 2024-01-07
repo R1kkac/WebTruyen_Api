@@ -14,17 +14,18 @@ namespace TestWebApi_v1.Models.DbContext
             RatingMangas = new HashSet<RatingManga>();
             BinhLuans = new HashSet<BinhLuan>();
             ChatRooms = new HashSet<ChatRoom>();
+			MangaAuthors = new HashSet<MangaAuthor>();
+			MangaArtists = new HashSet<MangaArtist>();
 
 
-        }
 
-        public string MangaId { get; set; } = null!;
+		}
+
+		public string MangaId { get; set; } = null!;
         public string MangaName { get; set; } = null!;
         public string? MangaDetails { get; set; }
         public string? MangaImage { get; set; }
         public string? MangaAlternateName { get; set; }
-        public string MangaAuthor { get; set; } = null!;
-        public string? MangaArtist { get; set; }
         public int? Type { get; set; }
         public string? Id { get; set; }
         public DateTime? Dateupdate { get; set; }
@@ -42,7 +43,9 @@ namespace TestWebApi_v1.Models.DbContext
         public virtual TypeManga? TypeNavigation { get; set; }
         public virtual ICollection<BinhLuan> BinhLuans { get; set; }
         public virtual ICollection<ChatRoom> ChatRooms { get; set; }
-    }
+		public virtual ICollection<MangaAuthor> MangaAuthors { get; set; }
+		public virtual ICollection<MangaArtist> MangaArtists { get; set; }
+	}
     public class BoTruyenTopView
     {
         public string MangaId { get; set; } = null!;

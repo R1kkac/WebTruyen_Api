@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Diagnostics;
 using System.Security.Claims;
@@ -10,6 +11,7 @@ using TestWebApi_v1.Models.DbContext;
 using TestWebApi_v1.Models.ResponeViewModel.ResponeManga;
 using TestWebApi_v1.Models.TruyenTranh.MangaView;
 using TestWebApi_v1.Models.ViewModel.MangaView;
+using TestWebApi_v1.Models.ViewModel.UserView;
 using TestWebApi_v1.Repositories;
 using TestWebApi_v1.Service;
 using TestWebApi_v1.Service.Hubs;
@@ -27,7 +29,9 @@ namespace TestWebApi_v1.Controllers
         private readonly IMangaRepo _mangaModel;
         private readonly RealTimeService _tb2;
         private readonly UserManager<User> _userManager;
-        public MangaController(IMangaRepo mangaModel, ILogger<MangaController> logger,
+
+
+		public MangaController(IMangaRepo mangaModel, ILogger<MangaController> logger,
             IMemoryCache memorycache,UserManager<User> userManager,RealTimeService tb2)
         {
             _mangaModel = mangaModel;
@@ -35,7 +39,6 @@ namespace TestWebApi_v1.Controllers
             _memoryCache = memorycache;
             _userManager = userManager;
             _tb2 = tb2;
-
         }
         //Bộ truyện
         [HttpGet("SearchManga")]
@@ -748,6 +751,9 @@ namespace TestWebApi_v1.Controllers
 			var count = await _mangaModel.GetDailyPublishedStoryCountAsync();
 			return Ok(count);
 		}
+
+
+
 		//Lấy kiểu truyện
 		[HttpGet("GetAllType")]
 		public IActionResult GetAll()
@@ -820,6 +826,167 @@ namespace TestWebApi_v1.Controllers
 			else
 			{
 				return NotFound(new { message = "Loại truyện không tồn tại." });
+			}
+		}
+
+
+
+		//lấy danh sách họa sĩ
+		[HttpGet("Artist/Getall")]
+		public async Task<List<ResponeArtist>> getArtist()
+		{
+			var result = await _mangaModel.getListArtist();
+			return result;
+		}
+		//Lấy hình Artist
+		[HttpGet("LayHinhArist/{image}")]
+		public IActionResult LayHinhArtist(string image)
+		{
+			var result = _mangaModel.LayHinhArtist(image);
+			return PhysicalFile(result!, "image/jpeg");
+		}
+		//Thêm họa sĩ
+		[HttpPost("CreateArtist")]
+		public async Task<IActionResult> CreateArtist([FromForm] ArtistAddedit artistAddedit, IFormFile? artistImage)
+		{
+			bool result = await _mangaModel.AddArtist(artistAddedit, artistImage);
+
+			if (result)
+			{
+				return Ok(new { message = "Artist created successfully." });
+			}
+			else
+			{
+				return BadRequest(new { message = "Failed to create Artist." });
+			}
+		}
+		//Xóa họa sĩ
+		[HttpDelete("{ArtistId}/DeleteArtist")]
+		public async Task<IActionResult> DeleteArtist(int ArtistId)
+		{
+			try
+			{
+				var result = await _mangaModel.DeleteArtist(ArtistId);
+				if (result)
+				{
+					return Ok(new ResponeStatus { Status = "Success", Message = "Xóa thành công" });
+				}
+				else
+				{
+					// Phân biệt giữa không tìm thấy và không thể xóa do có liên kết
+					return BadRequest(new ResponeStatus { Status = "Bad Request", Message = "Họa sĩ không thể xóa do có bộ truyện liên kết" });
+				}
+			}
+			catch (Exception ex)
+			{
+				// Trả về lỗi nội bộ của server
+				return StatusCode(StatusCodes.Status500InternalServerError,
+						  new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
+			}
+		}
+		//Sửa họa sĩ
+		[HttpPut("{ArtistId}/UpdateArtist")]
+		public async Task<IActionResult> UpdateArtist(int ArtistId, [FromForm] ArtistAddedit artistAddedit, IFormFile? artistImage)
+		{
+			try
+			{
+				var result = await _mangaModel.UpdateArtist(ArtistId, artistAddedit, artistImage);
+				if (result)
+				{
+					return Ok(new ResponeStatus { Status = "Success", Message = "Cập nhật họa sĩ thành công" });
+				}
+				else
+				{
+					// Phân biệt giữa không tìm thấy và lỗi khác
+					return BadRequest(new ResponeStatus { Status = "Bad Request", Message = "Không tìm thấy họa sĩ hoặc không thể cập nhật" });
+				}
+			}
+			catch (Exception ex)
+			{
+				// Trả về lỗi nội bộ của server
+				return StatusCode(StatusCodes.Status500InternalServerError,
+						  new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
+			}
+		}
+
+
+
+
+		//lấy danh sách tác giả
+		[HttpGet("Author/Getall")]
+		public async Task<List<ResponeAuthor>> getAtuhor()
+		{
+			var result = await _mangaModel.getListAuthor();
+			return result;
+		}
+		//Lấy hình Author
+		[HttpGet("LayHinhAuthor/{image}")]
+		public IActionResult LayHinhAuthor(string image)
+		{
+			var result = _mangaModel.LayHinhAuthor(image);
+			return PhysicalFile(result!, "image/jpeg");
+		}
+		//Thêm tác giả
+		[HttpPost("CreateAuthor")]
+		public async Task<IActionResult> CreateAuthor([FromForm] AuthorAddedit authorAddedit, IFormFile? authorImage)
+		{
+			bool result = await _mangaModel.AddAuthor(authorAddedit, authorImage);
+
+			if (result)
+			{
+				return Ok(new { message = "Author created successfully." });
+			}
+			else
+			{
+				return BadRequest(new { message = "Failed to create Author." });
+			}
+		}
+		//Xóa tác giả
+		[HttpDelete("{AuthorId}/DeleteAuthor")]
+		public async Task<IActionResult> DeleteAuthor(int AuthorId)
+		{
+			try
+			{
+				var result = await _mangaModel.DeleteAuthor(AuthorId);
+				if (result)
+				{
+					return Ok(new ResponeStatus { Status = "Success", Message = "Xóa thành công" });
+				}
+				else
+				{
+					// Phân biệt giữa không tìm thấy và không thể xóa do có liên kết
+					return BadRequest(new ResponeStatus { Status = "Bad Request", Message = "Họa sĩ không thể xóa do có bộ truyện liên kết" });
+				}
+			}
+			catch (Exception ex)
+			{
+				// Trả về lỗi nội bộ của server
+				return StatusCode(StatusCodes.Status500InternalServerError,
+						  new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
+			}
+		}
+		//Sửa tác giả
+		[HttpPut("{AuthorId}/UpdateAuthor")]
+		public async Task<IActionResult> UpdateAuthor(int AuthorId, [FromForm] AuthorAddedit authorAddedit, IFormFile? authorImage)
+		{
+			try
+			{
+				var result = await _mangaModel.UpdateAuthor(AuthorId, authorAddedit, authorImage);
+				if (result)
+				{
+					return Ok(new ResponeStatus { Status = "Success", Message = "Cập nhật họa sĩ thành công" });
+				}
+				else
+				{
+					// Phân biệt giữa không tìm thấy và lỗi khác
+					return BadRequest(new ResponeStatus { Status = "Bad Request", Message = "Không tìm thấy họa sĩ hoặc không thể cập nhật" });
+				}
+			}
+			catch (Exception ex)
+			{
+				// Trả về lỗi nội bộ của server
+				return StatusCode(StatusCodes.Status500InternalServerError,
+						  new ResponeStatus { Status = "Error", Message = $"Đã xảy ra lỗi: {ex.Message}" });
 			}
 		}
 

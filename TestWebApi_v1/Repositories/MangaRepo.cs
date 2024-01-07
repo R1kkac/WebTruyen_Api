@@ -21,6 +21,7 @@ using X.PagedList;
 using static StackExchange.Redis.Role;
 using TestWebApi_v1.Models.ResponeViewModel.ResponeManga;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using System;
 
 namespace TestWebApi_v1.Repositories
 {
@@ -100,10 +101,14 @@ namespace TestWebApi_v1.Repositories
 				List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == a.MangaId).OrderByDescending(y => y.ChapterDate)
 					.Take(3).ToListAsync();
 				var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
+				var listArtist = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.MangaArtists).ToListAsync();
+				var listAuthor = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.MangaAuthors).ToListAsync();
 				var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbydate).FirstOrDefaultAsync();
 				var mapchapter = _mapper.Map<List<chapterView2>>(listChapter);
 				mapmanga.ListChaper = mapchapter;
 				mapmanga.Listcategory = listCategory;
+				mapmanga.Listartist = listArtist;
+				mapmanga.Listauthor = listAuthor;
 				mapmanga.View = mangaview.ToString();
 				result.Add(mapmanga);
 			}
@@ -233,14 +238,18 @@ namespace TestWebApi_v1.Repositories
                 List<ChuongTruyen> listChapter = await _db.ChuongTruyens.Where(x => x.MangaId == a.MangaId).OrderByDescending(y => y.ChapterDate)
                     .ToListAsync();
                 var listCategory = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.Genres).ToListAsync();
-                var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbyyear).FirstOrDefaultAsync();
+				var listArtist = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.MangaArtists).ToListAsync();
+				var listAuthor = await _db.BoTruyens.Where(x => x.MangaId == a.MangaId).SelectMany(y => y.MangaAuthors).ToListAsync();
+				var mangaview = await _db.ViewCounts.Where(x => x.Id == a.MangaId).Select(y => y.Viewbyyear).FirstOrDefaultAsync();
                 var mapchapter = _mapper.Map<List<chapterView2>>(listChapter);
                 int sum = 0;
                 sum += await _db.BinhLuans.Where(y => y.MangaId.Equals(mapmanga.MangaId)).CountAsync();
                 mapmanga.Comment = sum;
-                mapmanga.ListChaper = mapchapter;
-                mapmanga.Listcategory = listCategory;
-                mapmanga.View = mangaview.ToString();
+                mapmanga.ListChaper = mapchapter;	
+				mapmanga.Listcategory = listCategory;
+				mapmanga.Listartist = listArtist;
+				mapmanga.Listauthor = listAuthor;
+				mapmanga.View = mangaview.ToString();
 
                 return mapmanga;
             }else{
@@ -290,8 +299,7 @@ namespace TestWebApi_v1.Repositories
 					MangaDetails = mangaDto.MangaDetails,
 					MangaImage = MangaImage != null ? MangaImage.FileName : null,
 					MangaAlternateName = mangaDto.MangaAlternateName,
-					MangaAuthor = mangaDto.MangaAuthor,
-					MangaArtist = mangaDto.MangaArtist,
+
 					Type = mangaDto.Type,
 					Id = user.Id,
 					Dateupdate = DateTime.Now,
@@ -307,6 +315,28 @@ namespace TestWebApi_v1.Repositories
 						if (genre != null)
 						{
 							manga.Genres.Add(genre); // Thêm TheLoai vào BoTruyen
+						}
+					}
+				}
+				if (mangaDto.ArtistIds != null)
+				{
+					foreach (var artistId in mangaDto.ArtistIds)
+					{
+						var artist = await _db.Artists.FindAsync(artistId); 
+						if (artist != null)
+						{
+							manga.MangaArtists.Add(artist);
+						}
+					}
+				}
+				if (mangaDto.AuthorIds != null)
+				{
+					foreach (var authorId in mangaDto.AuthorIds)
+					{
+						var author = await _db.Authors.FindAsync(authorId);
+						if (author != null)
+						{
+							manga.MangaAuthors.Add(author);
 						}
 					}
 				}
@@ -331,7 +361,12 @@ namespace TestWebApi_v1.Repositories
 			{
 				try
 				{
-					var truyen = await _db.BoTruyens.Include(bt => bt.Genres).FirstOrDefaultAsync(bt => bt.MangaId == mangaDto.MangaId);
+					var truyen = await _db.BoTruyens
+						.Include(bt => bt.Genres)
+						.Include(bt => bt.MangaArtists)
+						.Include(bt => bt.MangaAuthors)
+						.FirstOrDefaultAsync(bt => bt.MangaId == mangaDto.MangaId);
+
 					var user = await _userManager.FindByIdAsync(idUser);
 					var isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
 					if (truyen != null && (isAdmin || truyen.Id.Equals(idUser)))
@@ -345,8 +380,7 @@ namespace TestWebApi_v1.Repositories
 						truyen.MangaDetails = mangaDto.MangaDetails ?? truyen.MangaDetails;
 						truyen.MangaImage = (MangaImage != null) ? MangaImage.FileName : truyen.MangaImage;
 						truyen.MangaAlternateName = mangaDto.MangaAlternateName ?? truyen.MangaAlternateName;
-						truyen.MangaAuthor = mangaDto.MangaAuthor ?? truyen.MangaAuthor;
-						truyen.MangaArtist = mangaDto.MangaArtist ?? truyen.MangaArtist;
+
 						truyen.Type = mangaDto.Type ?? truyen.Type;
 						truyen.Dateupdate = DateTime.Now;
 
@@ -358,6 +392,33 @@ namespace TestWebApi_v1.Repositories
 							if (genre != null)
 							{
 								truyen.Genres.Add(genre); // Thêm liên kết mới
+							}
+						};
+
+						if (mangaDto.ArtistIds != null && mangaDto.ArtistIds.Any())
+						{
+							truyen.MangaArtists.Clear(); 
+
+							foreach (var artistId in mangaDto.ArtistIds)
+							{
+								var artist = await _db.Artists.FindAsync(artistId);
+								if (artist != null)
+								{
+									truyen.MangaArtists.Add(artist); 
+								}
+							}
+						}
+						if (mangaDto.AuthorIds != null && mangaDto.AuthorIds.Any())
+						{
+							truyen.MangaAuthors.Clear();
+
+							foreach (var authorId in mangaDto.AuthorIds)
+							{
+								var author = await _db.Authors.FindAsync(authorId);
+								if (author != null)
+								{
+									truyen.MangaAuthors.Add(author);
+								}
 							}
 						}
 
@@ -459,6 +520,8 @@ namespace TestWebApi_v1.Repositories
 			var user = await _userManager.FindByIdAsync(iduUser);
 			var truyen = await _db.BoTruyens
                 .Include(bt => bt.Genres)
+				.Include(bt => bt.MangaArtists)
+				.Include(bt => bt.MangaAuthors)
 				.Include(bt => bt.ChatRooms)
 					.ThenInclude(bt => bt.UserJoinChats)
 				.Include(bt => bt.BinhLuans)
@@ -506,7 +569,16 @@ namespace TestWebApi_v1.Repositories
 				{
 					theLoai.Mangas.Remove(truyen);
 				}
-
+				// Xử lý xóa các liên kết từ Artist
+				foreach (var artist in truyen.MangaArtists.ToList())
+				{
+					artist.BoTruyens.Remove(truyen);
+				}
+				// Xử lý xóa các liên kết từ Author
+				foreach (var author in truyen.MangaAuthors.ToList())
+				{
+					author.BoTruyens.Remove(truyen);
+				}
 				// Tiếp tục xử lý xóa các chương truyện và ảnh liên quan
 				string mangaFile = Path.Combine(_sv.OnGetFolderPath(data), truyen.MangaId);
 				if (mangaFile != null) _sv.DeleteFolder(mangaFile);
@@ -1038,7 +1110,6 @@ namespace TestWebApi_v1.Repositories
 				return false;
 			}
 		}
-
 		//Xóa thể loại
 		public async Task<bool> DeleteTheLoai(int genreId)
 		{
@@ -1302,6 +1373,10 @@ namespace TestWebApi_v1.Repositories
 			{
 				return false;
 			}
+			if(typeManga.BoTruyens.Any())
+			{
+				return false;
+			}
 
 			_db.TypeMangas.Remove(typeManga);
 			int result = await _db.SaveChangesAsync();
@@ -1321,6 +1396,285 @@ namespace TestWebApi_v1.Repositories
 			int result = await _db.SaveChangesAsync();
 			return result > 0;
 		}
+
+
+		//------------------------------------------------End-TypeMangas----------------------------------------------------//
+		//-------------------------------------------------Artist-----------------------------------------------------//
+
+
+		//Lấy danh sách họa sĩ
+		public async Task<List<ResponeArtist>> getListArtist()
+		{
+			using (var _context = _db)
+			{
+				var data = await _context.Artists.ToListAsync();
+				var map = _mapper.Map<List<ResponeArtist>>(data);
+				return map;
+			}
+		}
+		//Lấy hình Artist
+		public string LayHinhArtist(string image)
+		{
+
+			// Đường dẫn đến thư mục chứa hình ảnh "Manga"
+			string imagePath = Path.Combine(_env.ContentRootPath, "Manga", "ArtistImage", image);
+
+			// Kiểm tra xem hình ảnh có tồn tại không
+			if (System.IO.File.Exists(imagePath))
+			{
+				return imagePath;
+			}
+			return null;
+		}
+
+
+		//Thêm họa sĩ
+		public async Task<bool> AddArtist(ArtistAddedit artistAddedit, IFormFile? ArtistImage)
+		{
+			if(artistAddedit != null)
+			{
+				MangaArtist Artist = new MangaArtist
+				{
+					Name = artistAddedit.Name,
+					Birthday = artistAddedit.Birthday,
+					AlternateName = artistAddedit.AlternateName,
+					ArtistImage = ArtistImage != null ? ArtistImage.FileName : null,
+				};
+				string d = "Manga";
+				string FolderPath = _sv.OnGetFolderPath(d);
+				string mangaImagePath = Path.Combine(FolderPath, "ArtistImage");
+				if (ArtistImage != null) await _sv.UpLoadimage(ArtistImage, mangaImagePath);
+				_db.Artists.Add(Artist);
+				await _db.SaveChangesAsync();
+				return true;
+			}
+			return false;
+		}
+
+
+		//Xóa họa sĩ
+		public async Task<bool> DeleteArtist(int MangaArtistId)
+		{
+			var artist = await _db.Artists
+								   .Include(a => a.BoTruyens)
+								   .FirstOrDefaultAsync(a => a.MangaArtistId == MangaArtistId);
+
+			if (artist == null)
+			{
+				return false;
+			}
+
+			if (artist.BoTruyens.Any())
+			{
+				return false;
+			}
+
+			if (!string.IsNullOrEmpty(artist.ArtistImage))
+			{
+				var imagePath = Path.Combine(_env.ContentRootPath, "Manga", "ArtistImage", artist.ArtistImage);
+				if (File.Exists(imagePath))
+				{
+					File.Delete(imagePath);
+				}
+			}
+
+			_db.Artists.Remove(artist);
+			await _db.SaveChangesAsync();
+			return true;
+		}
+		//Sửa họa sĩ
+		public async Task<bool> UpdateArtist(int MangaArtistId, ArtistAddedit artistAddedit, IFormFile? ArtistImage)
+		{
+			try
+			{
+				var artist = await _db.Artists.FindAsync(MangaArtistId);
+				if (artist == null)
+				{
+					// Không tìm thấy nghệ sĩ
+					return false;
+				}
+
+				// Cập nhật thông tin
+				artist.Name = artistAddedit.Name;
+				artist.AlternateName = artistAddedit.AlternateName;
+				artist.Birthday = artistAddedit.Birthday;
+
+				if (ArtistImage != null)
+				{
+					string d = "Manga";
+					string FolderPath = _sv.OnGetFolderPath(d);
+					string mangaImagePath = Path.Combine(FolderPath, "ArtistImage");
+
+					// Xóa hình ảnh cũ nếu có
+					if (!string.IsNullOrEmpty(artist.ArtistImage))
+					{
+						string oldImagePath = Path.Combine(mangaImagePath, artist.ArtistImage);
+						if (File.Exists(oldImagePath))
+						{
+							File.Delete(oldImagePath);
+						}
+					}
+
+					// Lưu hình ảnh mới
+					string newImageName = ArtistImage.FileName;
+					string newImagePath = Path.Combine(mangaImagePath, newImageName);
+					using (var stream = new FileStream(newImagePath, FileMode.Create))
+					{
+						await ArtistImage.CopyToAsync(stream);
+					}
+
+					artist.ArtistImage = newImageName; // Cập nhật với tên tệp hình ảnh mới
+				}
+
+				_db.Artists.Update(artist);
+				await _db.SaveChangesAsync();
+				return true;
+			}
+			catch
+			{
+				// Trả về false nếu có lỗi xảy ra khi cập nhật dữ liệu vào cơ sở dữ liệu
+				return false;
+			}
+		}
+
+
+
+		//------------------------------------------------End-Artist----------------------------------------------------//
+		//-------------------------------------------------Author-----------------------------------------------------//
+
+		public async Task<List<ResponeAuthor>> getListAuthor()
+		{
+			using (var _context = _db)
+			{
+				var data = await _context.Authors.ToListAsync();
+				var map = _mapper.Map<List<ResponeAuthor>>(data);
+				return map;
+			}
+		}
+		//Lấy hình Author
+		public string LayHinhAuthor(string image)
+		{
+
+			// Đường dẫn đến thư mục chứa hình ảnh "Manga"
+			string imagePath = Path.Combine(_env.ContentRootPath, "Manga", "AuthorImage", image);
+
+			// Kiểm tra xem hình ảnh có tồn tại không
+			if (System.IO.File.Exists(imagePath))
+			{
+				return imagePath;
+			}
+			return null;
+		}
+
+		//Thêm tác giả
+		public async Task<bool> AddAuthor(AuthorAddedit authorAddedit, IFormFile? AuthorImage)
+		{
+			if (authorAddedit != null)
+			{
+				MangaAuthor Author = new MangaAuthor
+				{
+					Name = authorAddedit.Name,
+					Birthday = authorAddedit.Birthday,
+					AlternateName = authorAddedit.AlternateName,
+					AuthorImage = AuthorImage != null ? AuthorImage.FileName : null,
+				};
+				string d = "Manga";
+				string FolderPath = _sv.OnGetFolderPath(d);
+				string mangaImagePath = Path.Combine(FolderPath, "AuthorImage");
+				if (AuthorImage != null) await _sv.UpLoadimage(AuthorImage, mangaImagePath);
+				_db.Authors.Add(Author);
+				await _db.SaveChangesAsync();
+				return true;
+			}
+			return false;
+		}
+
+
+		//Xóa tác giả
+		public async Task<bool> DeleteAuthor(int MangaAuthorId)
+		{
+			var author = await _db.Authors
+								   .Include(a => a.BoTruyens)
+								   .FirstOrDefaultAsync(a => a.MangaAuthorId == MangaAuthorId);
+
+			if (author == null)
+			{
+				return false;
+			}
+
+			if (author.BoTruyens.Any())
+			{
+				return false;
+			}
+
+			if (!string.IsNullOrEmpty(author.AuthorImage))
+			{
+				var imagePath = Path.Combine(_env.ContentRootPath, "Manga", "AuthorImage", author.AuthorImage);
+				if (File.Exists(imagePath))
+				{
+					File.Delete(imagePath);
+				}
+			}
+
+			_db.Authors.Remove(author);
+			await _db.SaveChangesAsync();
+			return true;
+		}
+		//Sửa tác giả
+		public async Task<bool> UpdateAuthor(int MangaAuthorId, AuthorAddedit authorAddedit, IFormFile? AuthorImage)
+		{
+			try
+			{
+				var author = await _db.Authors.FindAsync(MangaAuthorId);
+				if (author == null)
+				{
+					// Không tìm thấy nghệ sĩ
+					return false;
+				}
+
+				// Cập nhật thông tin
+				author.Name = authorAddedit.Name;
+				author.AlternateName = authorAddedit.AlternateName;
+				author.Birthday = authorAddedit.Birthday;
+
+				if (AuthorImage != null)
+				{
+					string d = "Manga";
+					string FolderPath = _sv.OnGetFolderPath(d);
+					string mangaImagePath = Path.Combine(FolderPath, "AuthorImage");
+
+					// Xóa hình ảnh cũ nếu có
+					if (!string.IsNullOrEmpty(author.AuthorImage))
+					{
+						string oldImagePath = Path.Combine(mangaImagePath, author.AuthorImage);
+						if (File.Exists(oldImagePath))
+						{
+							File.Delete(oldImagePath);
+						}
+					}
+
+					// Lưu hình ảnh mới
+					string newImageName = AuthorImage.FileName;
+					string newImagePath = Path.Combine(mangaImagePath, newImageName);
+					using (var stream = new FileStream(newImagePath, FileMode.Create))
+					{
+						await AuthorImage.CopyToAsync(stream);
+					}
+
+					author.AuthorImage = newImageName; // Cập nhật với tên tệp hình ảnh mới
+				}
+
+				_db.Authors.Update(author);
+				await _db.SaveChangesAsync();
+				return true;
+			}
+			catch
+			{
+				// Trả về false nếu có lỗi xảy ra khi cập nhật dữ liệu vào cơ sở dữ liệu
+				return false;
+			}
+		}
+
 
 	}
 }

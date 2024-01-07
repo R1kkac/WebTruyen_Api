@@ -32,8 +32,10 @@ namespace TestWebApi_v1.Models
         public virtual DbSet<Datachat> Datachats { get; set; } = null!;
         public virtual DbSet<UserJoinChat> UserJoinChats { get; set; } = null!;
         public virtual DbSet<ChatRoom> ChatRooms { get; set; } = null!;
+		public virtual DbSet<MangaAuthor> Authors { get; set; } = null!;
+		public virtual DbSet<MangaArtist> Artists { get; set; } = null!;
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
@@ -66,9 +68,6 @@ namespace TestWebApi_v1.Models
                     .HasMaxLength(10)
                     .IsUnicode(false);
 
-                entity.Property(e => e.MangaArtist).HasMaxLength(100);
-
-                entity.Property(e => e.MangaAuthor).HasMaxLength(100);
 
                 entity.Property(e => e.MangaName).HasMaxLength(200);
 
@@ -387,7 +386,16 @@ namespace TestWebApi_v1.Models
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_User_UserJoinChat");
             });
-            OnModelCreatingPartial(modelBuilder);
+			modelBuilder.Entity<BoTruyen>()
+	            .HasMany(b => b.MangaAuthors)
+	            .WithMany(a => a.BoTruyens)
+	            .UsingEntity(j => j.ToTable("BoTruyenMangaAuthors"));
+
+			modelBuilder.Entity<BoTruyen>()
+				.HasMany(b => b.MangaArtists)
+				.WithMany(a => a.BoTruyens)
+				.UsingEntity(j => j.ToTable("BoTruyenMangaArtists"));
+			OnModelCreatingPartial(modelBuilder);
         }
         private static void SeedRole(ModelBuilder builder)
         {

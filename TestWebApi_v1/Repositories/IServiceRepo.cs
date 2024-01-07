@@ -16,8 +16,12 @@ namespace TestWebApi_v1.Repositories
         string getUrlImageforChapter(string requestUrl, string conTrollerName, string idManga, string idChapter, string imageName);
         Task<bool> checkUrlImage(string url);
 
-        string LayUrlAnh(string requestUrl, string conTrollerName, string Url);
+
+
+		string LayUrlAnh(string requestUrl, string conTrollerName, string Url);
         string? LayAvatarUser(string avatar);
-        JwtSecurityToken getToken(List<Claim> authClaims);
+        string? LayHinhArtist(string avatar);
+
+		JwtSecurityToken getToken(List<Claim> authClaims);
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -116,7 +117,20 @@ namespace TestWebApi_v1.Repositories
             }
             return null;
         }
-        public JwtSecurityToken getToken(List<Claim> authClaims)
+		public string? LayHinhArtist(string avatar)
+		{
+			// Đường dẫn đến thư mục chứa hình ảnh "Manga"
+			string imagePath = Path.Combine(_env.ContentRootPath, "Manga", "ArtistImage", avatar);
+
+			// Kiểm tra xem hình ảnh có tồn tại không
+			if (System.IO.File.Exists(imagePath))
+			{
+				return imagePath;
+			}
+			return null;
+		}
+
+		public JwtSecurityToken getToken(List<Claim> authClaims)
         {
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
 

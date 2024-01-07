@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TestWebApi_v1.Models;
 
@@ -11,9 +12,10 @@ using TestWebApi_v1.Models;
 namespace TestWebApi_v1.Migrations
 {
     [DbContext(typeof(WebTruyenTranh_v2Context))]
-    partial class WebTruyenTranh_v2ContextModelSnapshot : ModelSnapshot
+    [Migration("20240106174442_fixdatabase")]
+    partial class fixdatabase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -130,6 +132,15 @@ namespace TestWebApi_v1.Migrations
 
                     b.Property<string>("MangaAlternateName")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MangaArtist")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("MangaAuthor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("MangaDetails")
                         .HasColumnType("nvarchar(max)");

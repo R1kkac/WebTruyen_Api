@@ -93,6 +93,8 @@ namespace TestWebApi_v1.Service
 			var deleteThreshold = DateTime.UtcNow.AddDays(-3);//Để test dùng AddMinutes hoặc AddSeconds
 			var mangasToDelete = _db.BoTruyens
 				.Include(bt => bt.Genres)
+				.Include(bt => bt.MangaArtists)
+				.Include(bt => bt.MangaAuthors)
 				.Include(bt => bt.ChatRooms)
 				.Include(bt => bt.BinhLuans)
 					.ThenInclude(bl => bl.ReplyComments)
@@ -104,6 +106,20 @@ namespace TestWebApi_v1.Service
 
 			foreach (var truyen in mangasToDelete)
 			{
+				foreach (var chatroom in truyen.ChatRooms)
+				{
+					foreach (var userJoinChat in chatroom.UserJoinChats)
+					{
+						var dataChats = _db.Datachats.Where(dc => dc.RoomId == userJoinChat.RoomId && dc.UserId == userJoinChat.UserId);
+						_db.Datachats.RemoveRange(dataChats);
+					}
+				}
+				await _db.SaveChangesAsync();
+				//Xóa liên kết user với Roomchat
+				foreach (var chatroom in truyen.ChatRooms)
+				{
+					_db.UserJoinChats.RemoveRange(chatroom.UserJoinChats);
+				}
 				// Xử lý xóa ChatRooms
 				_db.ChatRooms.RemoveRange(truyen.ChatRooms);
 
@@ -126,6 +142,16 @@ namespace TestWebApi_v1.Service
 				foreach (var theLoai in truyen.Genres.ToList())
 				{
 					theLoai.Mangas.Remove(truyen);
+				}
+				// Xử lý xóa các liên kết từ Artist
+				foreach (var artist in truyen.MangaArtists.ToList())
+				{
+					artist.BoTruyens.Remove(truyen);
+				}
+				// Xử lý xóa các liên kết từ Author
+				foreach (var author in truyen.MangaAuthors.ToList())
+				{
+					author.BoTruyens.Remove(truyen);
 				}
 
 				// Xóa các chương truyện và ảnh liên quan

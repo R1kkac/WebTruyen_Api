@@ -41,6 +41,8 @@
     <Folder Include="Manga\806429\" />
     <Folder Include="Manga\Avatar\" />
     <Folder Include="Manga\Content\" />
+    <Folder Include="Manga\ArtistImage\" />
+    <Folder Include="Manga\AuthorImage\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
 

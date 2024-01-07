@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TestWebApi_v1.Models;
 
@@ -11,9 +12,10 @@ using TestWebApi_v1.Models;
 namespace TestWebApi_v1.Migrations
 {
     [DbContext(typeof(WebTruyenTranh_v2Context))]
-    partial class WebTruyenTranh_v2ContextModelSnapshot : ModelSnapshot
+    [Migration("20240106023634_tacgiahoasi")]
+    partial class tacgiahoasi
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -130,6 +132,15 @@ namespace TestWebApi_v1.Migrations
 
                     b.Property<string>("MangaAlternateName")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MangaArtist")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("MangaAuthor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("MangaDetails")
                         .HasColumnType("nvarchar(max)");
@@ -332,11 +343,11 @@ namespace TestWebApi_v1.Migrations
                     b.Property<string>("AlternateName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ArtistImage")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime?>("Birthday")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("MangaImage")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -344,7 +355,7 @@ namespace TestWebApi_v1.Migrations
 
                     b.HasKey("MangaArtistId");
 
-                    b.ToTable("Artists");
+                    b.ToTable("MangaArtist");
                 });
 
             modelBuilder.Entity("TestWebApi_v1.Models.DbContext.MangaAuthor", b =>
@@ -358,11 +369,11 @@ namespace TestWebApi_v1.Migrations
                     b.Property<string>("AlternateName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("AuthorImage")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime?>("Birthday")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("MangaImage")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -370,7 +381,7 @@ namespace TestWebApi_v1.Migrations
 
                     b.HasKey("MangaAuthorId");
 
-                    b.ToTable("Authors");
+                    b.ToTable("MangaAuthor");
                 });
 
             modelBuilder.Entity("TestWebApi_v1.Models.DbContext.RatingManga", b =>

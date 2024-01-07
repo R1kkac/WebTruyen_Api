@@ -67,5 +67,20 @@ namespace TestWebApi_v1.Repositories
 		Task<bool> AddTypeManga(ResponeType typeMangaDTO);
 		Task<bool> DeleteTypeManga(int id);
 		Task<bool> UpdateTypeManga(ResponeType typeMangaDTO);
+
+
+		//Artist
+		Task<List<ResponeArtist>> getListArtist();
+		Task<bool> AddArtist(ArtistAddedit artistAddedit, IFormFile? ArtistImage);
+		string LayHinhArtist(string image);
+		Task<bool> DeleteArtist(int MangaArtistId);
+		Task<bool> UpdateArtist(int MangaArtistId, ArtistAddedit artistAddedit, IFormFile? ArtistImage);
+
+		//Author
+		Task<List<ResponeAuthor>> getListAuthor();
+		string LayHinhAuthor(string image);
+		Task<bool> AddAuthor(AuthorAddedit authorAddedit, IFormFile? AuthorImage);
+		Task<bool> DeleteAuthor(int MangaAuthorId);
+		Task<bool> UpdateAuthor(int MangaAuthorId, AuthorAddedit authorAddedit, IFormFile? AuthorImage);
 	}
 }

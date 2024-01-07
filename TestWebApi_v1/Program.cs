@@ -9,6 +9,7 @@ using TestWebApi_v1.Models.DbContext;
 using TestWebApi_v1.Service.Hubs;
 using TestWebApi_v1.Service.MailService.Models;
 using TestWebApi_v1.Service;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
